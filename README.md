@@ -30,6 +30,17 @@ int main() {
 }
 ```
 
+Output:
+
+```
+         a         b
+    double       int
+         1         6
+         2         8
+         9         9
+Shape: (3, 2)
+```
+
 ## Initializing DataFrame
 
 ### Availiable data types
