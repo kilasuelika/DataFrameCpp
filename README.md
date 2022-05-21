@@ -4,7 +4,7 @@
 
 The goal of this library is to provide a dynamic DataFrame library for C++ with pandas-like API. Currently it mainly deal with data management.
 
-"Dynamic" means data information will be stored (I use `variant` to store data) and you don't need to specify data types when programming at most time. Of course, the trade-off is *Lower Performace* as type information must be matched at runtime. However the user can also use function of template version to avoid runtime check. If performance is critical, I suggest you to try [hosseinmoein/DataFrame](https://github.com/hosseinmoein/DataFrame) which is much more mature.
+"Dynamic" means data information will be stored (I use `variant` to store data) and you don't need to specify data types when programming at most time. Of course, the trade-off is **Lower Performace** as type information must be matched at runtime. However the user can also use function of template version to avoid runtime check. If performance is critical, I suggest you to try [hosseinmoein/DataFrame](https://github.com/hosseinmoein/DataFrame) which is much more mature.
 
 Other limitations are:
 
@@ -14,7 +14,7 @@ Other limitations are:
 
 This library try to provide pandas-like API, however there are some important differences except pandas is way more complete:
 
-1. Most modifications happen *in place* and there is no `in_place` option like pandas. In my own experience with pandas, I find it's really a pain to set `in_place = true` every time.
+1. Most modifications happen **in place** and there is no `in_place` option like pandas. In my own experience with pandas, I find it's really a pain to set `in_place = true` every time.
 
 ## Task
 
@@ -60,11 +60,22 @@ enum DType { NONE, STRING, BOOL, INT, LONGLONG, FLOAT, DOUBLE };
 
 ### Read From CSV Files
 
-The data type will be automatically decided. However it's only for `double` and `string` so that the data type will be either `double` or `string`.
+Given a `df1.csv` file:
+
+```
+a,b,c
+1,6,"X2"
+2,8,"X3"
+9,9,"X1"
+```
+
+Use following code to read it:
 
 ```cpp
 auto df1 = dfc::read_csv("df1.csv");
 ```
+
+The data type will be automatically decided. However it's only for `double` and `string` so that the column type will be either `double` or `string`.
 
 ### Manully input data
 
