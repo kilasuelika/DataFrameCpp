@@ -43,7 +43,7 @@ class DataFrame {
     // Blank DataFrame.
     DataFrame(const std::vector<std::string> &columns, const std::vector<DType> &types);
 
-    DataFrame(const DataFrame &df);
+    DataFrame(const DataFrame &df) = default;
     // info
     const DataFrameShape &shape() const;
     std::vector<std::string> columns();

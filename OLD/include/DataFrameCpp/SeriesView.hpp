@@ -10,14 +10,10 @@ namespace dfc {
 
 template <typename T> struct SeriesViewIterator;
 
-class DataFrame;
-
 class SeriesView {
   public:
     SeriesView() {}
-    SeriesView(Series *series);
-    SeriesView(Series *series, const std::vector<size_t> &pos);
-    SeriesView(Series *series, Index &index, bool reset_index = false);
+    SeriesView(Series *series, Index &index);
 
     // info
     std::string name() const;
@@ -28,8 +24,6 @@ class SeriesView {
     ViewIndexType index_type() const;
 
     // Subscript
-    template <typename T> T &iloc_(size_t i);
-
     std::string iloc_str_(long long i) const;
     std::string iloc_str(long long i) const;
     // std::ostream &operator<<(std::ostream &os, const SeriesView &df);
@@ -38,19 +32,9 @@ class SeriesView {
 
     // Modification
     template <typename T> void astype();
-
     // Assignment
     SeriesView &operator=(const SeriesView &obj);
     template <typename T1, typename T2> SeriesView &assign(const SeriesView &obj);
-
-    // Operator.
-    Series &operator+(const SeriesView &obj);
-    Series &operator-(const SeriesView &obj);
-    Series &operator*(const SeriesView &obj);
-    Series &operator/(const SeriesView &obj);
-
-    // Data
-    template <typename T> const std::vector<T> &vector() const;
 
     friend std::ostream &operator<<(std::ostream &os, const SeriesView &df);
     template <typename T> friend class SeriesViewIterator;
@@ -58,9 +42,6 @@ class SeriesView {
   private:
     ViewIndex _index;
     Series *_values;
-    // DataFrame *_data;
-    // size_t _id;
-    template <typename T> std::vector<T> &_vector();
 };
 
 template <typename T> struct SeriesViewIterator {

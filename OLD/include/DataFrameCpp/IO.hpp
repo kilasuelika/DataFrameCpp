@@ -125,15 +125,15 @@ DataFrame read_csv(const std::string &filename, const CSVIOOptions &options = CS
                 boost::algorithm::trim(token);
                 switch (types[c]) {
                 case DType::STRING:
-                    std::get<std::vector<std::string>>(df._values[c]->_values).back() =
+                    std::get<std::vector<std::string>>(df._values[c]._values).back() =
                         std::move(token);
                     break;
                 case DType::DOUBLE:
                     try {
-                        std::get<std::vector<double>>(df._values[c]->_values).back() =
+                        std::get<std::vector<double>>(df._values[c]._values).back() =
                             boost::lexical_cast<double>(token);
                     } catch (...) {
-                        std::get<std::vector<double>>(df._values[c]->_values).back() =
+                        std::get<std::vector<double>>(df._values[c]._values).back() =
                             std::numeric_limits<double>::quiet_NaN();
                     }
                     break;

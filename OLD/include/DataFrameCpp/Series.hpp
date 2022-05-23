@@ -22,8 +22,6 @@
 
 namespace dfc {
 
-class SeriesView;
-
 // A Series doesn't have index and can only be subscripted by number.
 class Series {
   public:
@@ -53,7 +51,6 @@ class Series {
 
     // Subscripts
     template <typename T> T &iloc(long long i);
-    template <typename T> T &iloc_(size_t i);
     template <typename T> const T &iloc(long long i) const;
     std::string iloc_str(long long i) const;
     std::string iloc_str_(long long i) const;
@@ -84,20 +81,15 @@ class Series {
     template <typename T> void push_back(const T &v);
     //
     const SeriesType &values() const;
-
     template <typename T> const std::vector<T> &vector() const;
 
     SeriesType _values;
-
-    friend class SeriesView;
 
   private:
     std::string _name;
     size_t _size;
 
     size_t _cal_index(long long i) const;
-
-    template <typename T> std::vector<T> &_vector();
 };
 
 }; // namespace dfc

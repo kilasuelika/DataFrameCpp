@@ -16,7 +16,7 @@ Other limitations are:
 
 This library try to provide pandas-like API, however there are some important differences except pandas is way more complete:
 
-1. Doesn't support view.
+1. Doesn't support view. 
 
 1. Most modifications happen **in place** and there is no `in_place` option like pandas. In my own experience with pandas, I find it's really a pain to set `in_place = true` every time.
 
@@ -118,15 +118,11 @@ Consists of `Index` and multiple `Series`.
 
 #### ViewIndex
 
-Use `Index*` to point to a basis index. The `ViewIndex` **may not** be contigous. So there is a pos `vector<size_t>` to store index-positon map. For example, `[ 5, 0, 1, 2, 4]` means the first row is the 5th element in `Index`, the second row is the 0-th element in `Index`.
+Use `Index*` to point to a basis index. The `ViewIndex` **may not** be contigous. So there is a `vector<size_t>` to store index-positon map. For example, `[ 5, 0, 1, 2, 4]` means the first row is the 5th element in `Index`, the second row is the 0-th element in `Index`.
 
 This is usefull for sorting and subscripting. For example, we can use a view to record the order of sorting results without actually reorder all rows(which requires copying and moving data between rows).
 
-The `ViewIndex` can running on `Index* = nullptr`. Then it can only use pos to generate index.
-
 Note that `ViewIndex` is the index of view, not view of index.
-
-In-contigouos data may slow computation performance thus you should try `copy` to create a new concrete `DataFrame` and do computation on it.
 
 #### SeriesView
 
@@ -134,8 +130,4 @@ Contains a pointer to `Series` and a `ViewIndex`.
 
 #### DataFrameView
 
-Consists of `vector<SeriesView*>`. This is the most complex data structure. Each column are independent thus complications rise when concatenation:
-
-1. Different column in a `DataFrameView`  got by horizontal concatenation may refer to the same basis Series.
-
-2. Different elements in one column may refer to the same element by vertical concatenation. To reduce complexity, vertical concatenation always return a concrete `DataFrame` (thus must copy data).
+Consists of `ViewIndex` and some `SeriesView`.

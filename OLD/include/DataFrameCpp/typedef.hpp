@@ -43,7 +43,7 @@ enum IndexDType { TRIVALINDEX = 0, INTINDEX, STRINGINDEX };
 static std::array<std::string, 3> IndexDTypeName{"trival", "int", "string"};
 using IndexType = std::variant<std::monostate, std::unordered_map<int, size_t>,
                                std::unordered_map<std::string, size_t>>;
-enum ViewIndexType { RANGE = 0, SLICE, POS };
+enum ViewIndexType { RANGE = 0, SLICE, NORMAL };
 
 struct Slice {
     long long start = 0, end = -1, step = 1;
