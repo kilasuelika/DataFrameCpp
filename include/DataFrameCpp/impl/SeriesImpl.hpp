@@ -8,14 +8,16 @@
 
 namespace dfc {
 
-template <typename T> Series::Series(std::vector<T> data) {
+dfc::Series::Series(size_t n) : _size(n) {}
+
+template <typename T> Series::Series(const std::vector<T> &data) {
     _size = data.size();
-    _values = std::move(data);
+    _values = data;
 }
 
 template <typename T> Series::Series(std::vector<T> &&data) {
     _size = data.size();
-    _values = data;
+    _values = std::move(data);
 }
 template <typename T> Series::Series(const std::string &name, std::vector<T> data) {
     _size = data.size();
@@ -27,6 +29,10 @@ template <typename T> Series::Series(const std::string &name, std::vector<T> &&d
     _name = name;
     _values = data;
 }
+// template <typename T>
+// Series::Series(const std::string &name, size_t size)
+//     : _name(name), _size(size), _values(std::vector<T>(size)) {}
+
 Series::Series(const std::string &name, DType type) {
     _name = name;
     switch (type) {
@@ -65,26 +71,42 @@ template <typename T> Series::Series(const std::string &name, std::initializer_l
     _size = data.size();
     _values = std::move(data);
 }
-Series::Series(const Series &new_series)
+
+inline Series::Series(const Series &new_series)
     : _name(new_series._name), _size(new_series._size), _values(new_series._values) {}
-Series::Series(Series &&new_series)
-    : _name(std::move(new_series._name)), _size(std::move(new_series._size)),
+
+inline Series::Series(Series &&new_series)
+    : _name(std::move(new_series._name)), _size(new_series._size),
       _values(std::move(new_series._values)) {}
 
-const std::string &Series::name() const { return _name; };
-void Series::rename(const std::string &name) { _name = name; }
-DType Series::dtype() const { return static_cast<DType>(_values.index()); };
-std::string Series::dtype_name() const { return DTypeName[_values.index()]; };
-size_t Series::size() const { return _size; };
-bool Series::empty() const { return _values.index() == 0; }
+inline Series &Series::operator=(const Series &A) {
+    _name = A._name;
+    _size = A._size;
+    _values = A._values;
+    return *this;
+}
 
-template <typename T> T &Series::iloc(long long i) {
+inline const std::string &Series::name() const { return _name; };
+inline void Series::rename(const std::string &name) { _name = name; }
+inline DType Series::dtype() const { return static_cast<DType>(_values.index()); };
+inline std::string Series::dtype_name() const { return DTypeName[_values.index()]; };
+inline size_t Series::size() const { return _size; };
+inline bool Series::empty() const { return _values.index() == 0; }
+
+template <typename T> inline T &Series::iloc(long long i) {
     return const_cast<T &>(const_cast<const Series *>(this)->iloc<T>(i));
 }
-template <typename T> T &Series::iloc_(size_t i) { return std::get<std::vector<T>>(_values)[i]; }
-template <typename T> const T &Series::iloc(long long i) const {
+template <typename T> inline const T &Series::iloc(long long i) const {
     return std::get<std::vector<T>>(_values)[_cal_index(i)];
 }
+
+template <typename T> inline const T &Series::iloc_(size_t i) const {
+    return std::get<std::vector<T>>(_values)[i];
+}
+template <typename T> inline T &Series::iloc_(size_t i) {
+    return const_cast<T &>(const_cast<const Series *>(this)->iloc_<T>(i));
+}
+
 std::string Series::iloc_str(long long i) const {
     auto n = _cal_index(i);
     return iloc_str_(n);
@@ -117,6 +139,7 @@ std::string Series::iloc_str_(long long i) const {
     return res.str();
 }
 
+// Even if _values is in monostate, the result is correct as a new vector res is created.
 template <typename T> void Series::astype() {
     if constexpr (std::is_same_v<T, std::string>) {
         // Current is numeric type, convert to string.
@@ -237,12 +260,13 @@ std::ostream &operator<<(std::ostream &os, const Series &df) {
     for (auto i = 0; i < df._size; ++i) {
         os << df.iloc_str(i) << std::endl;
     }
-    os << "Length: " << df.size() << std::endl;
+    os << "Length: " << df.size() << std::flush;
     return os;
 }
 
-#define _SERIES_ARITH_ASSIGNMENT_IMPL_(OPNAME, transformop)                                        \
-    template <typename T1, typename T2> void Series::OPNAME##_assignment(Series const &obj) {      \
+// Series-Series bin op can utilize parallel execution.
+#define DataFrameCpp_SERIES_SERIES_BINOP_ASSIGNMENT_IMPL_(OPNAME, transformop)                     \
+    template <typename T1, typename T2> void Series::OPNAME##_assignment(const Series &obj) {      \
         if (DTypeMap[std::type_index(typeid(T1))] != dtype()) {                                    \
             astype<T1>();                                                                          \
         }                                                                                          \
@@ -252,144 +276,53 @@ std::ostream &operator<<(std::ostream &os, const Series &df) {
                        std::transformop<>{});                                                      \
     }
 
-_SERIES_ARITH_ASSIGNMENT_IMPL_(add, plus);
-_SERIES_ARITH_ASSIGNMENT_IMPL_(sub, minus);
-_SERIES_ARITH_ASSIGNMENT_IMPL_(mul, multiplies);
-_SERIES_ARITH_ASSIGNMENT_IMPL_(div, divides);
+DataFrameCpp_SERIES_SERIES_BINOP_ASSIGNMENT_IMPL_(add, plus);
+DataFrameCpp_SERIES_SERIES_BINOP_ASSIGNMENT_IMPL_(sub, minus);
+DataFrameCpp_SERIES_SERIES_BINOP_ASSIGNMENT_IMPL_(mul, multiplies);
+DataFrameCpp_SERIES_SERIES_BINOP_ASSIGNMENT_IMPL_(div, divides);
 
-#define _SERIES_SELF_ARITHMETIC_BIN_OP_IMPL(op, MEMBER_NAME)                                       \
-    Series &Series::operator op(Series const &obj) {                                               \
-        if (_size != obj._size) {                                                                  \
-            std::string info = std::format("[Series]: two series has different length: {}, {}.",   \
-                                           _size, obj._size);                                      \
-            std::cerr << info << std::endl;                                                        \
-            return *this;                                                                          \
-        } else {                                                                                   \
-            if ((static_cast<int>(dtype()) <= 1) || (static_cast<int>(obj.dtype()) <= 1)) {        \
-                std::string info = std::format(                                                    \
-                    "[Series]: Arithmetic operations are not allowed on non-numeric series. ");    \
-                std::cerr << info << std::endl;                                                    \
-                return *this;                                                                      \
-            } else {                                                                               \
-                switch (dtype()) {                                                                 \
-                case DType::BOOL:                                                                  \
-                    switch (obj.dtype()) {                                                         \
-                    case DType::BOOL:                                                              \
-                        MEMBER_NAME##_assignment<bool, bool>(obj);                                 \
-                        break;                                                                     \
-                    case DType::INT:                                                               \
-                        MEMBER_NAME##_assignment<int, int>(obj);                                   \
-                        break;                                                                     \
-                    case DType::LONGLONG:                                                          \
-                        MEMBER_NAME##_assignment<long long, long long>(obj);                       \
-                        break;                                                                     \
-                    case DType::FLOAT:                                                             \
-                        MEMBER_NAME##_assignment<float, float>(obj);                               \
-                        break;                                                                     \
-                    case DType::DOUBLE:                                                            \
-                        MEMBER_NAME##_assignment<double, double>(obj);                             \
-                        break;                                                                     \
-                    default:                                                                       \
-                        break;                                                                     \
-                    }                                                                              \
-                    break;                                                                         \
-                case DType::INT:                                                                   \
-                    switch (obj.dtype()) {                                                         \
-                    case DType::BOOL:                                                              \
-                        MEMBER_NAME##_assignment<int, bool>(obj);                                  \
-                        break;                                                                     \
-                    case DType::INT:                                                               \
-                        MEMBER_NAME##_assignment<int, int>(obj);                                   \
-                        break;                                                                     \
-                    case DType::LONGLONG:                                                          \
-                        MEMBER_NAME##_assignment<long long, long long>(obj);                       \
-                        break;                                                                     \
-                    case DType::FLOAT:                                                             \
-                        MEMBER_NAME##_assignment<float, float>(obj);                               \
-                        break;                                                                     \
-                    case DType::DOUBLE:                                                            \
-                        MEMBER_NAME##_assignment<double, double>(obj);                             \
-                        break;                                                                     \
-                    default:                                                                       \
-                        break;                                                                     \
-                    }                                                                              \
-                    break;                                                                         \
-                case DType::LONGLONG:                                                              \
-                    switch (obj.dtype()) {                                                         \
-                    case DType::BOOL:                                                              \
-                        MEMBER_NAME##_assignment<long long, bool>(obj);                            \
-                        break;                                                                     \
-                    case DType::INT:                                                               \
-                        MEMBER_NAME##_assignment<long long, int>(obj);                             \
-                        break;                                                                     \
-                    case DType::LONGLONG:                                                          \
-                        MEMBER_NAME##_assignment<long long, long long>(obj);                       \
-                        break;                                                                     \
-                    case DType::FLOAT:                                                             \
-                        MEMBER_NAME##_assignment<double, float>(obj);                              \
-                        break;                                                                     \
-                    case DType::DOUBLE:                                                            \
-                        MEMBER_NAME##_assignment<double, double>(obj);                             \
-                        break;                                                                     \
-                    default:                                                                       \
-                        break;                                                                     \
-                    }                                                                              \
-                    break;                                                                         \
-                case DType::FLOAT:                                                                 \
-                    switch (obj.dtype()) {                                                         \
-                    case DType::BOOL:                                                              \
-                        MEMBER_NAME##_assignment<float, bool>(obj);                                \
-                        break;                                                                     \
-                    case DType::INT:                                                               \
-                        MEMBER_NAME##_assignment<float, int>(obj);                                 \
-                        break;                                                                     \
-                    case DType::LONGLONG:                                                          \
-                        MEMBER_NAME##_assignment<double, long long>(obj);                          \
-                        break;                                                                     \
-                    case DType::FLOAT:                                                             \
-                        MEMBER_NAME##_assignment<float, float>(obj);                               \
-                        break;                                                                     \
-                    case DType::DOUBLE:                                                            \
-                        MEMBER_NAME##_assignment<double, double>(obj);                             \
-                        break;                                                                     \
-                    default:                                                                       \
-                        break;                                                                     \
-                    }                                                                              \
-                    break;                                                                         \
-                case DType::DOUBLE:                                                                \
-                    switch (obj.dtype()) {                                                         \
-                    case DType::BOOL:                                                              \
-                        MEMBER_NAME##_assignment<double, bool>(obj);                               \
-                        break;                                                                     \
-                    case DType::INT:                                                               \
-                        MEMBER_NAME##_assignment<double, int>(obj);                                \
-                        break;                                                                     \
-                    case DType::LONGLONG:                                                          \
-                        MEMBER_NAME##_assignment<double, long long>(obj);                          \
-                        break;                                                                     \
-                    case DType::FLOAT:                                                             \
-                        MEMBER_NAME##_assignment<double, float>(obj);                              \
-                        break;                                                                     \
-                    case DType::DOUBLE:                                                            \
-                        MEMBER_NAME##_assignment<double, double>(obj);                             \
-                        break;                                                                     \
-                    default:                                                                       \
-                        break;                                                                     \
-                    }                                                                              \
-                    break;                                                                         \
-                default:                                                                           \
-                    break;                                                                         \
-                }                                                                                  \
-                return *this;                                                                      \
-            }                                                                                      \
-        }                                                                                          \
-    }
+#include "AssignmentMacro.hpp"
+DataFrameCpp_SERIES_OR_VIEW_BINOP_ASSIGNMENT_IMPL_(Series, SeriesView, +=, add);
+DataFrameCpp_SERIES_OR_VIEW_BINOP_ASSIGNMENT_IMPL_(Series, SeriesView, -=, sub);
+DataFrameCpp_SERIES_OR_VIEW_BINOP_ASSIGNMENT_IMPL_(Series, SeriesView, *=, mul);
+DataFrameCpp_SERIES_OR_VIEW_BINOP_ASSIGNMENT_IMPL_(Series, SeriesView, /=, div);
 
-_SERIES_SELF_ARITHMETIC_BIN_OP_IMPL(+=, add);
-_SERIES_SELF_ARITHMETIC_BIN_OP_IMPL(-=, sub);
-_SERIES_SELF_ARITHMETIC_BIN_OP_IMPL(*=, mul);
-_SERIES_SELF_ARITHMETIC_BIN_OP_IMPL(/=, div);
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, Series, +=, add_assignment);
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, Series, -=, sub_assignment);
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, Series, *=, mul_assignment);
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, Series, /=, div_assignment);
 
-#undef _SERIES_ARITH_ASSIGNMENT_IMPL_
-#undef _SERIES_SELF_ARITHMETIC_BIN_OP_IMPL
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, SeriesView, +=, add_assignment);
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, SeriesView, -=, sub_assignment);
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, SeriesView, *=, mul_assignment);
+DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(Series, SeriesView, /=, div_assignment);
+
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, SeriesView, add, +);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, SeriesView, sub, -);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, SeriesView, mul, *);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, SeriesView, div, /);
+
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, Series, add, +);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, Series, sub, -);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, Series, mul, *);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_(Series, Series, div, /);
+
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_BIN_OP_(Series, SeriesView, add, +);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_BIN_OP_(Series, SeriesView, sub, -);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_BIN_OP_(Series, SeriesView, mul, *);
+DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_BIN_OP_(Series, SeriesView, div, /);
+
+DataFrameCpp_SERIES_SERIES_ARITH_BIN_OP_IMPL_(+, add_assignment);
+DataFrameCpp_SERIES_SERIES_ARITH_BIN_OP_IMPL_(-, sub_assignment);
+DataFrameCpp_SERIES_SERIES_ARITH_BIN_OP_IMPL_(*, mul_assignment);
+DataFrameCpp_SERIES_SERIES_ARITH_BIN_OP_IMPL_(/, div_assignment);
+
+#include "UndefMacro.hpp"
+
+// template <typename T> dfc::SeriesIterator<T> &dfc::SeriesIterator<T>::operator++() {
+//     if ()
+//     ++ptr;
+//     return *this;
+// }
+
 }; // namespace dfc

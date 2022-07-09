@@ -120,16 +120,16 @@ std::vector<std::string> DataFrame::columns() {
 }
 
 template <typename T> T &DataFrame::iloc(long long i, long long j) { return _values[j].iloc<T>(i); }
-SeriesView DataFrame::operator[](const std::string &col) {
+SeriesView DataFrame::operator[](const std::string &col) const {
     auto it = _column_map.find(col);
     if (it == _column_map.end()) {
         auto info = std::format("[DataFrame]: Can't find column {}.", col);
         std::cerr << info << std::endl;
-        throw(std::range_error(info));
+        // throw(std::range_error(info));
         return SeriesView();
     } else {
         auto n = it->second;
-        return SeriesView(_values[n], _index);
+        return SeriesView(_values[n], const_cast<Index *>(&_index));
     }
 }
 
@@ -202,8 +202,31 @@ void DataFrame::to_csv(const std::string &filename, const CSVIOOptions &options)
 
 const std::vector<Series *> &DataFrame::values() const { return _values; }
 
-dfc::DataFrame dfc::DataFrame::copy() const {
+DataFrame dfc::DataFrame::copy() const {
     DataFrame res;
+    return res;
+}
+
+template <typename T> T dfc::DataFrame::to_eigen() const { return to_eigen<T>(columns()); }
+
+template <typename T> T DataFrame::to_eigen(const std::vector<std::string> &l) const {
+    T res(shape()[0], l.size());
+    using EleType = typename T::Scalar;
+
+    int i = 0;
+    for (auto &col_name : l) {
+        size_t col_id = -1;
+        try {
+            col_id = _column_map.at(col_name);
+        } catch (...) {
+            std::cerr << std::format("This dataframe doesn't have a column {}.", col_name)
+                      << std::endl;
+            continue;
+        }
+        auto col_data = _values[col_id]->vector<EleType>();
+        std::copy(col_data.begin(), col_data.end(), res.col(i).begin());
+        ++i;
+    }
     return res;
 }
 

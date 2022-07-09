@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <typeindex>
+#include <format>
 #include <typeinfo>
 #include <exception>
 
@@ -28,6 +29,8 @@ static std::unordered_map<std::type_index, DType> DTypeMap{
     {std::type_index(typeid(double)), DType::DOUBLE}};
 using DataFrameShape = std::array<size_t, 2>;
 
+// static std::unordered_map<std::type_index, std::unordered_map<std::type_index, DType>>{
+// };
 using SeriesType =
     std::variant<std::monostate, std::vector<std::string>, std::vector<bool>, std::vector<int>,
                  std::vector<long long>, std::vector<float>, std::vector<double>>;

@@ -5,17 +5,18 @@
 
 namespace dfc {
 
-dfc::DataFrameView::DataFrameView(DataFrame &dataframe)
-    : _index(dataframe._index), _shape(dataframe.shape()), _column_map(dataframe._column_map) {
+dfc::DataFrameView::DataFrameView(const DataFrame &dataframe)
+    : _index(const_cast<Index *>(&dataframe._index)), _shape(dataframe.shape()),
+      _column_map(dataframe._column_map) {
 
     for (size_t i = 0; i < dataframe.shape()[0]; ++i) {
         _values.push_back(new SeriesView(dataframe._values[i]));
     }
 }
 
-DataFrameView::DataFrameView(DataFrame &dataframe, const std::vector<long long> &rows,
+DataFrameView::DataFrameView(const DataFrame &dataframe, const std::vector<long long> &rows,
                              const std::vector<std::string> &cols)
-    : _index(dataframe._index, rows) {
+    : _index(const_cast<Index *>(&dataframe._index), rows) {
     // Conpute row index.
     _shape[0] = rows.size();
 

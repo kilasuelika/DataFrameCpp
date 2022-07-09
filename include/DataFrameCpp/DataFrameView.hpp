@@ -12,9 +12,9 @@ class DataFrame;
 // DataFrameView stores multiple pointers to many SeriesView.
 class DataFrameView {
   public:
-    DataFrameView(DataFrame &dataframe);
+    DataFrameView(const DataFrame &dataframe);
     // rows can contains negative index.
-    DataFrameView(DataFrame &dataframe, const std::vector<long long> &rows,
+    DataFrameView(const DataFrame &dataframe, const std::vector<long long> &rows,
                   const std::vector<std::string> &col);
 
     // Subscripts
@@ -28,6 +28,16 @@ class DataFrameView {
 
     // Assignment
     DataFrameView &operator=(const DataFrameView &A);
+
+    DataFrame operator+(const DataFrameView &obj);
+    DataFrame operator-(const DataFrameView &obj);
+    DataFrame operator*(const DataFrameView &obj);
+    DataFrame operator/(const DataFrameView &obj);
+
+    DataFrame operator+(const DataFrame &obj);
+    DataFrame operator-(const DataFrame &obj);
+    DataFrame operator*(const DataFrame &obj);
+    DataFrame operator/(const DataFrame &obj);
 
     ~DataFrameView();
 

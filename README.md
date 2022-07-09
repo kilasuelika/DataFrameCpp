@@ -100,6 +100,10 @@ DataFrame<int, Series> df({"a","b","c"},{DType::STRING,DType::DOUBLE, DType::INT
 
 ## Convertion
 
+## Computation
+
+### Basic arithmetic operation
+
 ## Reference
 
 ### Core data structure

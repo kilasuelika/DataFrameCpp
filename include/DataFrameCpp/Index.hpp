@@ -19,7 +19,7 @@ class Index {
     // info
     IndexDType dtype() const;
     std::string dtype_name() const;
-    size_t size();
+    size_t size() const;
     std::string name() const;
     bool is_trival() const;
 
@@ -49,8 +49,9 @@ class ViewIndex {
     ViewIndex() {}
     ViewIndex(size_t n);
     ViewIndex(const std::vector<size_t> &v);
-    ViewIndex(Index &index);
-    ViewIndex(Index &index, const std::vector<long long> &v); // Can contains negative integer.
+    ViewIndex(Index *index);
+    ViewIndex(Index *index,
+              const std::vector<long long> &v); // Can contains negative integer.
 
     // info
     std::string name() const;
@@ -71,11 +72,11 @@ class ViewIndex {
     std::string iloc_str(long long n) const;
 
     // Modification
-    void set_index(Index &index);
+    void set_index(Index *index);
     size_t _cal_index(long long i) const;
 
   private:
-    Index *_index = nullptr;
+    Index *_index;
     // Store discrete integers position.
     std::vector<size_t> _pos;
     Slice _slice;

@@ -3,9 +3,16 @@
 #include "../Index.hpp"
 
 namespace dfc {
-dfc::ViewIndex::ViewIndex(Index &index, const std::vector<long long> &v)
-    : _index(&index), _is_range(false), _is_slice(false), _size(v.size()),
+dfc::ViewIndex::ViewIndex(Index *index, const std::vector<long long> &v)
+    : _index(index), _is_range(false), _is_slice(false), _size(v.size()),
       _pos(get_positive_index(v)), _index_type(ViewIndexType::POS) {}
+
+ViewIndex::ViewIndex(Index *index) {
+    set_index(index);
+
+    if (!index->is_trival())
+        _init_nonrange_index();
+}
 
 std::string ViewIndex::name() const { return _index->name(); }
 bool ViewIndex::is_trival() const { return _is_range; }
@@ -76,7 +83,7 @@ Index::Index(Series &&_values) : _values(std::move(_values)) {
 
 IndexDType Index::dtype() const { return static_cast<IndexDType>(_key_map.index()); }
 std::string Index::dtype_name() const { return IndexDTypeName[dtype()]; }
-size_t Index::size() { return _size; }
+size_t Index::size() const { return _size; }
 std::string Index::name() const { return _values.name(); }
 bool Index::is_trival() const { return dtype() == IndexDType::TRIVALINDEX; }
 
@@ -119,13 +126,6 @@ dfc::ViewIndex::ViewIndex(size_t n) : _size(n) {}
 dfc::ViewIndex::ViewIndex(const std::vector<size_t> &v)
     : _pos(v), _size(v.size()), _index_type(ViewIndexType::POS) {}
 
-ViewIndex::ViewIndex(Index &index) {
-    set_index(index);
-
-    if (!index.is_trival())
-        _init_nonrange_index();
-}
-
 void ViewIndex::_init_nonrange_index() {
     _is_range = false;
     _size = _index->size();
@@ -133,7 +133,10 @@ void ViewIndex::_init_nonrange_index() {
     std::iota(_pos.begin(), _pos.end(), 0);
 }
 
-void ViewIndex::set_index(Index &index) { _index = &index; }
+void ViewIndex::set_index(Index *index) {
+    _index = index;
+    _size = index->size();
+}
 
 bool dfc::ViewIndex::is_range() const { return _is_range; }
 bool dfc::ViewIndex::is_slice() const { return _is_slice; }

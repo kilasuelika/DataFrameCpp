@@ -1,1 +1,3 @@
-#pragma once
+#undef DataFrameCpp_ASSGNMENT_SWITCH_CASE_
+#undef DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_
+#undef DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_BIN_OP_

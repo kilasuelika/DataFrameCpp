@@ -49,14 +49,14 @@ class DataFrame {
     std::vector<std::string> columns();
 
     // Subscripts.
+    // SeriesView operator[](const std::string &col);
+    SeriesView operator[](const std::string &col) const;
+
     template <typename T> T &iloc(long long i, long long j);
     SeriesView iloc(std::initializer_list<long long> rows, const std::string &col);
     DataFrameView iloc(std::initializer_list<long long> rows,
                        std::initializer_list<std::string> col);
     std::string iloc_str_(size_t i, size_t j); // Always positive integer.
-
-    // Get a single column.
-    SeriesView operator[](const std::string &col);
 
     // Modify
     void insert_column(const std::string &name, DType type); // blank column
@@ -77,7 +77,7 @@ class DataFrame {
     // All numeric columns to an eigen type.
     template <typename T> T to_eigen() const;
     // Specific columns.
-    template <typename T> T to_eigen(std::initializer_list<std::string> l) const;
+    template <typename T> T to_eigen(const std::vector<std::string> &l) const;
 
     // Data
     const std::vector<Series *> &values() const;

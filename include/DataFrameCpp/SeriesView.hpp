@@ -17,7 +17,8 @@ class SeriesView {
     SeriesView() {}
     SeriesView(Series *series);
     SeriesView(Series *series, const std::vector<size_t> &pos);
-    SeriesView(Series *series, Index &index, bool reset_index = false);
+    // SeriesView(Series *series, const Index &index);
+    SeriesView(Series *series, Index *index);
 
     // info
     std::string name() const;
@@ -28,6 +29,7 @@ class SeriesView {
     ViewIndexType index_type() const;
 
     // Subscript
+    template <typename T> const T &iloc_(size_t i) const;
     template <typename T> T &iloc_(size_t i);
 
     std::string iloc_str_(long long i) const;
@@ -43,16 +45,51 @@ class SeriesView {
     SeriesView &operator=(const SeriesView &obj);
     template <typename T1, typename T2> SeriesView &assign(const SeriesView &obj);
 
+    SeriesView &operator+=(const SeriesView &obj);
+    SeriesView &operator-=(const SeriesView &obj);
+    SeriesView &operator*=(const SeriesView &obj);
+    SeriesView &operator/=(const SeriesView &obj);
+
+    SeriesView &operator+=(const Series &obj);
+    SeriesView &operator-=(const Series &obj);
+    SeriesView &operator*=(const Series &obj);
+    SeriesView &operator/=(const Series &obj);
+
     // Operator.
-    Series &operator+(const SeriesView &obj);
-    Series &operator-(const SeriesView &obj);
-    Series &operator*(const SeriesView &obj);
-    Series &operator/(const SeriesView &obj);
+    template <typename T1, typename T2, typename Ret> Series add(const SeriesView &obj);
+    template <typename T1, typename T2, typename Ret> Series sub(const SeriesView &obj);
+    template <typename T1, typename T2, typename Ret> Series mul(const SeriesView &obj);
+    template <typename T1, typename T2, typename Ret> Series div(const SeriesView &obj);
+
+    template <typename T1, typename T2, typename Ret> Series add(const Series &obj);
+    template <typename T1, typename T2, typename Ret> Series sub(const Series &obj);
+    template <typename T1, typename T2, typename Ret> Series mul(const Series &obj);
+    template <typename T1, typename T2, typename Ret> Series div(const Series &obj);
+
+    template <typename T1, typename T2> void add_assignment(const Series &obj);
+    template <typename T1, typename T2> void sub_assignment(const Series &obj);
+    template <typename T1, typename T2> void mul_assignment(const Series &obj);
+    template <typename T1, typename T2> void div_assignment(const Series &obj);
+
+    template <typename T1, typename T2> void add_assignment(const SeriesView &obj);
+    template <typename T1, typename T2> void sub_assignment(const SeriesView &obj);
+    template <typename T1, typename T2> void mul_assignment(const SeriesView &obj);
+    template <typename T1, typename T2> void div_assignment(const SeriesView &obj);
+
+    Series operator+(const SeriesView &obj);
+    Series operator-(const SeriesView &obj);
+    Series operator*(const SeriesView &obj);
+    Series operator/(const SeriesView &obj);
+
+    Series operator+(const Series &obj);
+    Series operator-(const Series &obj);
+    Series operator*(const Series &obj);
+    Series operator/(const Series &obj);
 
     // Data
     template <typename T> const std::vector<T> &vector() const;
 
-    friend std::ostream &operator<<(std::ostream &os, const SeriesView &df);
+    friend std::ostream &operator<<(std::ostream &os, const SeriesView &dv);
     template <typename T> friend class SeriesViewIterator;
 
   private:
