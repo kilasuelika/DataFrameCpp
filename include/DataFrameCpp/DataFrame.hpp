@@ -8,6 +8,7 @@
 //#include <optional>
 //#include <unordered_map>
 #include <fstream>
+#include <map>
 #include "Index.hpp"
 
 // Keep index of left operand.
@@ -44,27 +45,33 @@ class DataFrame {
     DataFrame(const std::vector<std::string> &columns, const std::vector<DType> &types);
 
     DataFrame(const DataFrame &df);
+    DataFrame(const DataFrameView &view);
+
     // info
     const DataFrameShape &shape() const;
-    std::vector<std::string> columns();
+    std::vector<std::string> columns() const;
 
     // Subscripts.
     // SeriesView operator[](const std::string &col);
-    SeriesView operator[](const std::string &col) const;
+    DataFrameView operator[](const std::string &col) const;
 
     template <typename T> T &iloc(long long i, long long j);
-    SeriesView iloc(std::initializer_list<long long> rows, const std::string &col);
-    DataFrameView iloc(std::initializer_list<long long> rows,
-                       std::initializer_list<std::string> col);
+    // SeriesView iloc(const std::vector<long long> &rows, const std::string &col);
+    DataFrameView iloc(const std::vector<long long> &rows, const std::vector<long long> &cols);
     std::string iloc_str_(size_t i, size_t j); // Always positive integer.
 
     // Modify
-    void insert_column(const std::string &name, DType type); // blank column
-    void insert_column(Series &&column);
-    void insert_columns(std::vector<Series> &&columns);
+    void insert_column(int k, const std::string&name, DType type);
+    void insert_column(int k, Series &&column);
+    void insert_column(int k, const std::string &name, Series column);
+
+    void append_column(const std::string &name, DType type); // blank column
+    void append_column(Series &&column);
+    void append_column(const std::string &name, Series column);
+    void append_columns(std::vector<Series> &&columns);
 
     // Insert a new blank row.
-    void push_back();
+    void append_row();
 
     // Arithmetic
     DataFrame operator+(DataFrame const &obj);
@@ -93,9 +100,7 @@ class DataFrame {
 
   private:
     DataFrameShape _shape{0, 0};
-    std::unordered_map<std::string, size_t> _column_map;
-
-    size_t _cnt = 0; // Use this to automatically assign column name.
+    std::multimap<std::string, size_t> _column_map;
 
     std::string _find_valid_column_name(const std::string &name);
     // void _init_by_columns(std::vector<Series> &&columns);

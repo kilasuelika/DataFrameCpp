@@ -13,10 +13,12 @@
 #include <format>
 #include <typeinfo>
 #include <exception>
+#include <concepts>
 
 namespace dfc {
 // Data type.
 enum DType { NONE = 0, STRING, BOOL, INT, LONGLONG, FLOAT, DOUBLE };
+
 static std::array<std::string, 7> DTypeName{"none",      "string", "bool",  "int",
                                             "long long", "float",  "double"};
 static std::unordered_map<std::type_index, DType> DTypeMap{
@@ -28,6 +30,11 @@ static std::unordered_map<std::type_index, DType> DTypeMap{
     {std::type_index(typeid(float)), DType::FLOAT},
     {std::type_index(typeid(double)), DType::DOUBLE}};
 using DataFrameShape = std::array<size_t, 2>;
+
+template <typename T>
+concept iloc_type = requires(T x) {
+    requires std::same_as<T, int> || std::same_as<T, size_t> || std::same_as<T, long long>;
+};
 
 // static std::unordered_map<std::type_index, std::unordered_map<std::type_index, DType>>{
 // };
@@ -44,12 +51,13 @@ using SeriesViewType =
 // STRINGINDEX: string as key.
 enum IndexDType { TRIVALINDEX = 0, INTINDEX, STRINGINDEX };
 static std::array<std::string, 3> IndexDTypeName{"trival", "int", "string"};
-using IndexType = std::variant<std::monostate, std::unordered_map<int, size_t>,
-                               std::unordered_map<std::string, size_t>>;
+// A key can be mapped to multiple rows.
+using IndexType = std::variant<long long, std::unordered_map<int, std::vector<size_t>>,
+                               std::unordered_map<std::string, std::vector<size_t>>>;
 enum ViewIndexType { RANGE = 0, SLICE, POS };
 
 struct Slice {
-    long long start = 0, end = -1, step = 1;
+    long long start = 0, step = 1, end = -1;
 
     std::string str() const {
         return std::format("Slice( start={}, end={}, step={})", start, end, step);

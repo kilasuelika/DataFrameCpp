@@ -12,13 +12,20 @@ template <typename T> struct SeriesViewIterator;
 
 class DataFrame;
 
+// class Series;
+
 class SeriesView {
   public:
     SeriesView() {}
     SeriesView(Series *series);
     SeriesView(Series *series, const std::vector<size_t> &pos);
+    SeriesView(Series *series, const std::vector<long long> &pos);
+    SeriesView(const SeriesView *view, const std::vector<size_t> &pos);
     // SeriesView(Series *series, const Index &index);
     SeriesView(Series *series, Index *index);
+    SeriesView(Series *series, std::shared_ptr<ViewIndex>& index);
+
+    friend Series;
 
     // info
     std::string name() const;
@@ -41,8 +48,12 @@ class SeriesView {
     // Modification
     template <typename T> void astype();
 
+    Series copy() const;
+
     // Assignment
     SeriesView &operator=(const SeriesView &obj);
+    template <typename T> SeriesView &operator=(const T &v);
+
     template <typename T1, typename T2> SeriesView &assign(const SeriesView &obj);
 
     SeriesView &operator+=(const SeriesView &obj);
@@ -93,7 +104,7 @@ class SeriesView {
     template <typename T> friend class SeriesViewIterator;
 
   private:
-    ViewIndex _index;
+    std::shared_ptr<ViewIndex> _index;
     Series *_values;
     // DataFrame *_data;
     // size_t _id;

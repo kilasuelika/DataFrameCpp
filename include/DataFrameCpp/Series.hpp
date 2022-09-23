@@ -35,6 +35,8 @@ class Series {
     template <typename T> Series(std::vector<T> &&data);
     template <typename T> Series(const std::string &name, std::vector<T> data);
     template <typename T> Series(const std::string &name, std::vector<T> &&data);
+    
+
     // Blank column
     // template <typename T>
     // Series(const std::string &name , size_t size); // Blank series with specific size.
@@ -44,6 +46,8 @@ class Series {
 
     Series(const Series &new_series);
     Series(Series &&new_series);
+
+    Series(const SeriesView &view);
 
     // Assignment
     Series &operator=(const Series &A);
@@ -68,6 +72,8 @@ class Series {
 
     std::string iloc_str(long long i) const;
     std::string iloc_str_(long long i) const;
+
+    SeriesView iloc(const std::vector<long long> &pos);
 
     // Iterator
     // template <typename T> SeriesIterator<T> begin() const;
@@ -119,6 +125,7 @@ class Series {
 
     // Modification
     template <typename T> void reserve(size_t sz);
+    void resize(size_t sz);
 
     // Insert a blank elements.
     void push_back();
@@ -127,6 +134,7 @@ class Series {
     //
     const SeriesType &values() const;
 
+    template<typename T> std::vector<T> asvector() const;
     template <typename T> const std::vector<T> &vector() const;
 
     SeriesType _values;
@@ -138,6 +146,7 @@ class Series {
     size_t _size;
 
     size_t _cal_index(long long i) const;
+    std::vector<size_t> _cal_index(const std::vector<long long> &i) const;
 
     template <typename T> std::vector<T> &_vector();
 };

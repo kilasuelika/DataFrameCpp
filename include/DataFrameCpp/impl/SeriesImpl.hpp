@@ -61,15 +61,38 @@ Series::Series(const std::string &name, DType type) {
 }
 
 template <typename T> Series::Series(std::initializer_list<T> l) {
-    std::vector<T> data(l);
-    _size = data.size();
-    _values = std::move(data);
+    if constexpr (!std::is_same_v<T, const char *>) {
+        std::vector<T> data(l);
+        _size = data.size();
+        _values = std::move(data);
+    }else {
+        std::vector<std::string> data(l.size());
+        int i = 0;
+        for (auto& ele: l) {
+            data[i]=ele;
+            ++i;
+        }
+        _size =i;
+        _values = std::move(data);
+    }
 }
 template <typename T> Series::Series(const std::string &name, std::initializer_list<T> l) {
     _name = name;
-    std::vector<T> data(l);
-    _size = data.size();
-    _values = std::move(data);
+    if constexpr (!std::is_same_v<T, const char*>) {
+          std::vector<T> data(l);
+        _size = data.size();
+        _values = std::move(data);
+    } else {
+        std::vector<std::string> data(l.size());
+        int i = 0;
+        for (auto &e : l) {
+            data[i] = e;
+            ++i;
+        }
+        _size = data.size();
+        _values = std::move(data);
+    }
+    
 }
 
 inline Series::Series(const Series &new_series)
@@ -78,6 +101,22 @@ inline Series::Series(const Series &new_series)
 inline Series::Series(Series &&new_series)
     : _name(std::move(new_series._name)), _size(new_series._size),
       _values(std::move(new_series._values)) {}
+
+dfc::Series::Series(const SeriesView &view) : _name(view.name()), _size(view.size()) {
+    std::visit(
+        [&view, this](auto &&v) -> void {
+            using VecT = std::decay_t<decltype(v)>;
+            if constexpr (not std::is_same_v<VecT, std::monostate>) {
+                using EleT = typename VecT::value_type;
+                VecT res(view.size());
+                for (int i = 0; i < view.size(); ++i) {
+                    res[i] = view.iloc_<EleT>(i);
+                }
+                this->_values = res;
+            };
+        },
+        view._values->_values);
+}
 
 inline Series &Series::operator=(const Series &A) {
     _name = A._name;
@@ -139,6 +178,7 @@ std::string Series::iloc_str_(long long i) const {
     return res.str();
 }
 
+dfc::SeriesView dfc::Series::iloc(const std::vector<long long> &pos) { return SeriesView(this); }
 // Even if _values is in monostate, the result is correct as a new vector res is created.
 template <typename T> void Series::astype() {
     if constexpr (std::is_same_v<T, std::string>) {
@@ -195,6 +235,36 @@ template <typename T> void Series::astype() {
     }
 }
 
+void dfc::Series::resize(size_t sz) {
+    if (sz == 0)
+        return;
+    switch (_values.index()) {
+        case 0:
+        std::cerr << "Column is not set to any type. Can't resize."<<std::endl;
+        break;
+case 1:
+    std::get<std::vector<std::string>>(_values).resize(sz);
+        break;
+case 2:
+    std::get<std::vector<bool>>(_values).resize(sz);
+    break;
+case 3:
+    std::get<std::vector<int>>(_values).resize(sz);
+    break;
+case 4:
+    std::get<std::vector<long long>>(_values).resize(sz);
+    break;
+case 5:
+    std::get<std::vector<float>>(_values).resize(sz);
+    break;
+case 6:
+    std::get<std::vector<double>>(_values).resize(sz);
+    break;
+default:
+    break;
+}
+}
+
 template <typename T> void Series::reserve(size_t sz) {
     if (_values.index() == 0) {
         // Current no data.
@@ -238,7 +308,11 @@ template <typename T> void Series::push_back(const T &e) {
 }
 
 const SeriesType &Series::values() const { return _values; };
-
+template <typename T> std::vector<T> dfc::Series::asvector() const {
+    Series new_series = *this;
+    new_series.astype<T>();
+    return std::move(new_series.vector<T>());
+}
 template <typename T> const std::vector<T> &Series::vector() const {
     return std::get<std::vector<T>>(_values);
 };
@@ -253,6 +327,11 @@ size_t Series::_cal_index(long long i) const {
     } else {
         return _size + i;
     }
+}
+std::vector<size_t> dfc::Series::_cal_index(const std::vector<long long> &i) const {
+    std::vector<size_t> res(i.size());
+    std::transform(i.begin(), i.end(), res.begin(), [this](long long j) { return _cal_index(j); });
+    return res;
 }
 
 std::ostream &operator<<(std::ostream &os, const Series &df) {

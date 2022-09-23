@@ -19,8 +19,7 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
     if (file.is_open()) {
 
         std::vector<std::string> columns;
-        std::vector<std::array<long long, 2>>
-            type_counts;                // Counts valid double elements in each column.
+        std::vector<std::array<long long, 3>> type_counts; // [double, string, int].
         std::string separator1("");     // dont let quoted arguments escape themselves
         std::string separator2(",");    // ·Ö¸î
         std::string separator3("\"\'"); // let it have quoted arguments
@@ -53,6 +52,7 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
         // Now read one by one.
         // Assuming all columns are double.
         type_counts.resize(C);
+        std::vector<bool> contain_double(C, false);
         while (std::getline(file, line)) {
             if (line_cnt > options._header) {
                 boost::tokenizer<boost::escaped_list_separator<char>> tok(line, els);
@@ -63,16 +63,34 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
                                   << " columns which is not equal to previous one." << std::endl;
                     }
 
-                    try {
-                        // try if can cast to double.
-                        std::string token = *beg;
-                        boost::algorithm::trim(token);
-                        boost::lexical_cast<double>(token);
-                        ++type_counts[i][0];
-                    } catch (...) {
-                        ++type_counts[i][1];
+                    std::string token = *beg;
+                    boost::algorithm::trim(token);
+                    // If contain double, then the column can't be int.
+                    if (contain_double[i]) {
+                        try {
+                            // try cast to double
+                            boost::lexical_cast<double>(token);
+                            ++type_counts[i][0];
+                            contain_double[i] = true;
+                        } catch (...) {
+                            ++type_counts[i][1];
+                        }
+                    } else {
+                        try {
+                            // try if can cast to int.
+                            boost::lexical_cast<int>(token);
+                            ++type_counts[i][2];
+                        } catch (...) {
+                            try {
+                                // try cast to double
+                                boost::lexical_cast<double>(token);
+                                ++type_counts[i][0];
+                                contain_double[i] = true;
+                            } catch (...) {
+                                ++type_counts[i][1];
+                            }
+                        }
                     }
-
                     ++i;
                 }
             }
@@ -84,11 +102,20 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
         std::vector<DType> types(C);
         std::transform(type_counts.begin(), type_counts.end(), types.begin(),
                        [double_threshold(options.double_threshold)](const auto &ele) -> DType {
-                           if ((static_cast<double>(ele[0]) / (ele[0] + ele[1])) >
-                               double_threshold) {
-                               return DType::DOUBLE;
+                           if (ele[0] > 0) {
+                               if ((static_cast<double>(ele[0]) / (ele[0] + ele[1] + ele[2])) >
+                                   double_threshold) {
+                                   return DType::DOUBLE;
+                               } else {
+                                   return DType::STRING;
+                               }
                            } else {
-                               return DType::STRING;
+                               if ((static_cast<double>(ele[2]) / (ele[0] + ele[1] + ele[2])) >
+                                   double_threshold) {
+                                   return DType::INT;
+                               } else {
+                                   return DType::STRING;
+                               }
                            }
                        });
         /*for (int i = 0; i < columns.size(); ++i) {
@@ -117,7 +144,7 @@ DataFrame read_csv(const std::string &filename, const CSVIOOptions &options = CS
     int r = 0;
     while (std::getline(file, line)) {
         if (r > options._header) {
-            df.push_back();
+            df.append_row();
             boost::tokenizer<boost::escaped_list_separator<char>> tok(line, els);
             int c = 0;
             for (auto beg = tok.begin(); beg != tok.end(); ++beg) {
@@ -136,6 +163,10 @@ DataFrame read_csv(const std::string &filename, const CSVIOOptions &options = CS
                         std::get<std::vector<double>>(df._values[c]->_values).back() =
                             std::numeric_limits<double>::quiet_NaN();
                     }
+                    break;
+                case DType::INT:
+                    std::get<std::vector<int>>(df._values[c]->_values).back() =
+                        boost::lexical_cast<int>(token);
                     break;
                 default:
                     break;

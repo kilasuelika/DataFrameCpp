@@ -114,7 +114,9 @@ Type is `vector<T>`. It's always contiguous.
 
 #### Index
 
-Use a `Series` to store keys and use `unordered_map` to store key-index map.
+Use a `Series` to store keys and use `unordered_map` to store key-index map. The key map is a variant to represent range(contiguous integer indexing), int and string indexing.
+
+If the key map is long long, then the value is the start of indexing.
 
 #### DataFrame
 
@@ -132,6 +134,8 @@ Note that `ViewIndex` is the index of view, not view of index.
 
 In-contigouos data may slow computation performance thus you should try `copy` to create a new concrete `DataFrame` and do computation on it.
 
+`ViewIndex` has a key map that map integer location to the location in original index.
+
 #### SeriesView
 
 Contains a pointer to `Series` and a `ViewIndex`.
@@ -143,3 +147,5 @@ Consists of `vector<SeriesView*>`. This is the most complex data structure. Each
 1. Different column in a `DataFrameView`  got by horizontal concatenation may refer to the same basis Series.
 
 2. Different elements in one column may refer to the same element by vertical concatenation. To reduce complexity, vertical concatenation always return a concrete `DataFrame` (thus must copy data).
+
+3. If the `DataFrameView` has multiple columns that have the same name. Then the `column_map` only store the last index.

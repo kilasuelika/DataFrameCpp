@@ -5,16 +5,21 @@
 namespace dfc {
 
 class ViewIndex;
+class SeriesView;
+class DataFrameView;
 
 // Index is always contingous.
+// It may have different types of data. So use Series to store data.
 class Index {
     friend ViewIndex;
+    friend SeriesView;
 
   public:
     // Constructor
     Index() {}
     Index(Series &&_values);
     Index(const Index &new_index) = default;
+    Index(const ViewIndex &view);
 
     // info
     IndexDType dtype() const;
@@ -25,14 +30,17 @@ class Index {
 
     // Subscripts
     // Convert to string. Better for cout.
+    template <iloc_type T> size_t iloc(T i) const;
+    // size_t iloc(size_t i) const;
     std::string iloc_str(long long n) const;
 
     // Modification
     void push_back(); // For a trival index, just increase size 1.
 
     void resize(size_t n);
+    void reset_index(long long start = 0); // Reset to trival index.
 
-    IndexType _key_map; // Map key to row index.
+    IndexType _key_map; // Map key to row index. Default to be monostate
     Series _values;
 
     size_t _cal_index(long long i) const;
@@ -52,6 +60,14 @@ class ViewIndex {
     ViewIndex(Index *index);
     ViewIndex(Index *index,
               const std::vector<long long> &v); // Can contains negative integer.
+    ViewIndex(Index *index, const std::vector<size_t> &v);
+    // Here pos is the pos in current viewindex.
+    template <iloc_type T> ViewIndex(const ViewIndex &view, const std::vector<T> &pos);
+    // template <typename T> ViewIndex(const ViewIndex &view, const std::vector<T> &pos);
+
+    friend SeriesView;
+    friend DataFrameView;
+    friend Index;
 
     // info
     std::string name() const;
@@ -74,22 +90,27 @@ class ViewIndex {
     // Modification
     void set_index(Index *index);
     size_t _cal_index(long long i) const;
+    void reset_index(long long start = 0);
 
   private:
     Index *_index;
+    IndexType _key_map;
     // Store discrete integers position.
+
+    // If if range index, _pos[0] is start.
+    // If _index_type==Slice, _pos[0] is start, _pos[1] is interval
+    // If POS, then _pos[i] is the integer index in _index.
     std::vector<size_t> _pos;
-    Slice _slice;
+    // Slice _slice;
     size_t _size = 0;
-    // If if range index, then use a start and size to specify range. start stores iloc_id_ _pos[0].
-    bool _is_range = true;
-    bool _is_slice = false;
+    // bool _is_range = true;
+    // bool _is_slice = false;
     ViewIndexType _index_type{ViewIndexType::RANGE};
 
     void _init_nonrange_index();
 };
 
-// struct ViewIndexIterator {
+// str  uct ViewIndexIterator {
 //     ViewIndexIterator(ViewIndex *ptr = nullptr) : data(ptr){};
 //
 //     ViewIndexIterator &operator++();

@@ -11,10 +11,10 @@ std::string DataFrame::_find_valid_column_name(const std::string &name) {
     std::string new_name = name;
     if (name.empty() or _column_map.contains(name)) {
         // Find a new column name.
-        _cnt = _shape[1];
+        int _cnt = 1;
         auto max_cnt = _cnt + 1000;
         for (; _cnt < max_cnt; ++_cnt) {
-            new_name = std::to_string(_cnt);
+            new_name = std::format("{}__{}", name, _cnt);
             if (not _column_map.contains(new_name)) {
                 break;
             }
@@ -30,34 +30,75 @@ std::string DataFrame::_find_valid_column_name(const std::string &name) {
     return new_name;
 }
 
-void DataFrame::insert_column(const std::string &name, DType type) {
-    std::string new_name = _find_valid_column_name(name);
-    _values.push_back(new Series(new_name, type));
-    _column_map[new_name] = _shape[1];
+void DataFrame::append_column(const std::string &name, DType type) {
+    //std::string new_name = _find_valid_column_name(name);
+    _values.push_back(new Series(name, type));
+    _values.back()->resize(_shape[0]);
+    _column_map.insert(std::pair{name, _shape[1]});
     ++_shape[1];
 }
 
-void DataFrame::insert_column(Series &&column) {
+void dfc::DataFrame::insert_column(int k, const std::string &name, Series column) {
+    column.rename(name);
+    insert_column(k, std::move(column));
+}
+void dfc::DataFrame::insert_column(int k, Series &&column) {
+    if (k > _shape[1]) {
+        std::cerr << "k is larger than total columns, failed to insert_column." << std::endl;
+        return;
+    }
+    // If insert the first column, then set row size.
     if (_shape[1] == 0) {
-        _values.push_back(new Series(column));
-        _column_map[column.name()] = _shape[1];
+        _column_map.insert(std::pair{column.name(), 0});
+        _values.push_back(new Series(std::move(column)));
+        //_column_map[column.name()] = _shape[1];
         _shape[1]++;
         _shape[0] = column.size();
         return;
     }
     if (column.size() != _shape[0]) {
-        std::cerr << "[insert_column]: Column " << column.name() << " has " << column.size()
+        std::cerr << "[append_column]: Column " << column.name() << " has " << column.size()
                   << " rows which is not equal to " << _shape[0] << ". Failed to insert."
                   << std::endl;
         return;
     }
-    std::string new_name = _find_valid_column_name(column.name());
-    column.rename(new_name);
+    // std::string new_name = _find_valid_column_name(column.name());
+    // column.rename(new_name);
+    for (auto& [_,v]:_column_map) {
+        if (v >= k)
+            ++v;    
+    }
+    _column_map.insert(std::pair{column.name(), k});
+    //_values.emplace_back(new Series(std::move(column)));
+    _values.insert(_values.begin()+k, new Series(std::move(column)));
+    _shape[1]++;
+}
+void DataFrame::append_column(Series &&column) { // If insert the first column, then set row size.
+    if (_shape[1] == 0) {
+        _column_map.insert(std::pair{column.name(), 0});
+        _values.push_back(new Series(std::move(column)));
+        //_column_map[column.name()] = _shape[1];
+        _shape[1]++;
+        _shape[0] = column.size();
+        return;
+    }
+    if (column.size() != _shape[0]) {
+        std::cerr << "[append_column]: Column " << column.name() << " has " << column.size()
+                  << " rows which is not equal to " << _shape[0] << ". Failed to insert."
+                  << std::endl;
+        return;
+    }
+    // std::string new_name = _find_valid_column_name(column.name());
+    // column.rename(new_name);
+    _column_map.insert(std::pair{column.name(), _shape[1]});
     _values.emplace_back(new Series(std::move(column)));
-    _column_map[new_name] = _shape[1];
     _shape[1]++;
 }
 
+void dfc::DataFrame::append_column(const std::string &name, Series column) {
+    column.rename(name);
+    append_column(std::move(column));
+}
 //
 // void DataFrame::_init_by_columns(std::vector<Series> &&columns) {
 //     _shape[0] = columns.size();
@@ -73,14 +114,15 @@ void DataFrame::insert_column(Series &&column) {
 //     _values = columns;
 // }
 
-void DataFrame::insert_columns(std::vector<Series> &&columns) {
+void DataFrame::append_columns(std::vector<Series> &&columns) {
     for (auto &&c : columns) {
-        insert_column(std::move(c));
+        append_column(std::move(c));
     }
     _index.resize(_shape[0]);
 }
 
-void DataFrame::push_back() {
+
+void DataFrame::append_row() {
     for (auto &c : _values) {
         c->push_back();
     }
@@ -88,7 +130,7 @@ void DataFrame::push_back() {
     _index.push_back();
 }
 
-DataFrame::DataFrame(std::initializer_list<Series> columns) { insert_columns(columns); }
+DataFrame::DataFrame(std::initializer_list<Series> columns) { append_columns(columns); }
 
 DataFrame::DataFrame(const std::vector<std::string> &columns, const std::vector<DType> &types) {
     auto N = columns.size();
@@ -98,44 +140,58 @@ DataFrame::DataFrame(const std::vector<std::string> &columns, const std::vector<
                   << std::endl;
     } else {
         for (size_t i = 0; i < N; ++i) {
-            insert_column(columns[i], types[i]);
+            append_column(columns[i], types[i]);
         }
     }
 }
 
 dfc::DataFrame::DataFrame(const DataFrame &df)
-    : _shape(df._shape), _column_map(df._column_map), _cnt(df._cnt), _index(df._index) {
+    : _shape(df._shape), _column_map(df._column_map), _index(df._index) {
     for (auto &col : df._values) {
         _values.push_back(new Series(*col));
     }
 }
 
+dfc::DataFrame::DataFrame(const DataFrameView &view) : _shape(view._shape), _index(*(view._index)) {
+
+    // Copy data
+    for (int i = 0; i < view._values.size(); ++i) {
+        auto &c = view._values[i];
+        auto new_c = new Series(*(view._values[i]));
+        //auto new_name = _find_valid_column_name(new_c->name());
+        //new_c->rename(new_name);
+        _column_map.insert(std::pair{new_c->name(), i});
+        //_column_map[new_name] = i;
+        _values.push_back(new_c);
+    }
+}
+
 const DataFrameShape &DataFrame::shape() const { return _shape; }
 
-std::vector<std::string> DataFrame::columns() {
+std::vector<std::string> DataFrame::columns() const {
     std::vector<std::string> res(_shape[1]);
     for (int i = 0; i < _shape[1]; ++i) {
         res[i] = _values[i]->name();
     }
 }
 
-template <typename T> T &DataFrame::iloc(long long i, long long j) { return _values[j].iloc<T>(i); }
-SeriesView DataFrame::operator[](const std::string &col) const {
-    auto it = _column_map.find(col);
-    if (it == _column_map.end()) {
+template <typename T> T &DataFrame::iloc(long long i, long long j) { return _values[j]->iloc<T>(i); }
+
+DataFrameView DataFrame::operator[](const std::string &col) const {
+    auto it = _column_map.equal_range(col);
+    if (it .first==it.second) {
         auto info = std::format("[DataFrame]: Can't find column {}.", col);
         std::cerr << info << std::endl;
         // throw(std::range_error(info));
-        return SeriesView();
+        return DataFrameView();
     } else {
-        auto n = it->second;
-        return SeriesView(_values[n], const_cast<Index *>(&_index));
+        return DataFrameView(*this, {col});
     }
 }
 
-dfc::DataFrameView dfc::DataFrame::iloc(std::initializer_list<long long> rows,
-                                        std::initializer_list<std::string> col) {
-    return DataFrameView(*this, rows, col);
+dfc::DataFrameView dfc::DataFrame::iloc(const std::vector<long long> &rows,
+                                        const std::vector<long long> &cols) {
+    return DataFrameView(*this, rows, cols);
 }
 
 inline std::string dfc::DataFrame::iloc_str_(size_t i, size_t j) { return _values[j]->iloc_str(i); }
@@ -210,22 +266,30 @@ DataFrame dfc::DataFrame::copy() const {
 template <typename T> T dfc::DataFrame::to_eigen() const { return to_eigen<T>(columns()); }
 
 template <typename T> T DataFrame::to_eigen(const std::vector<std::string> &l) const {
-    T res(shape()[0], l.size());
+    //Count cols.
+    int total_columns=0;
+    for (auto & cn: l) {
+        total_columns += _column_map.count(cn);
+    }
+    T res(shape()[0], total_columns);
+
     using EleType = typename T::Scalar;
 
     int i = 0;
     for (auto &col_name : l) {
-        size_t col_id = -1;
-        try {
-            col_id = _column_map.at(col_name);
-        } catch (...) {
+        auto it = _column_map.equal_range(col_name);
+        if (it.first!=it.second) {
+            for (auto sit=it.first;sit!=it.second;++sit) {
+                auto col_data = _values[sit->second]->asvector<EleType>();
+                std::copy(col_data.begin(), col_data.end(), res.col(i).begin());
+                ++i;
+            }
+        }else {
             std::cerr << std::format("This dataframe doesn't have a column {}.", col_name)
                       << std::endl;
-            continue;
         }
-        auto col_data = _values[col_id]->vector<EleType>();
-        std::copy(col_data.begin(), col_data.end(), res.col(i).begin());
-        ++i;
+
+        
     }
     return res;
 }
