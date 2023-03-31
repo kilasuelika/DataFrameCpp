@@ -5,8 +5,8 @@
 
 #include "SeriesView.hpp"
 #include <eigen3/Eigen/Dense>
-//#include <optional>
-//#include <unordered_map>
+// #include <optional>
+// #include <unordered_map>
 #include <fstream>
 #include <map>
 #include "Index.hpp"
@@ -16,12 +16,11 @@ namespace dfc {
 class DataFrameView;
 
 class DataFrame {
-public:
+  public:
     friend DataFrameView;
 
     // Constructor
-    DataFrame() {
-    };
+    DataFrame(){};
     DataFrame(std::initializer_list<Series> columns);
     // Blank DataFrame.
     DataFrame(const std::vector<std::string> &columns, const std::vector<DType> &types);
@@ -36,7 +35,7 @@ public:
     const DataFrameShape &shape() const;
     bool empty() const;
     DataFrameView head(int n = 5) const;
-    void describe() const; //print column name and type.
+    void describe() const; // print column name and type.
 
     std::vector<std::string> columns() const;
 
@@ -45,26 +44,26 @@ public:
     DataFrameView operator[](const std::string &col) const;
     DataFrameView operator[](const DataFrame &col) const;
 
-
     template <typename T> T &iloc(long long i, long long j = 0);
     // SeriesView iloc(const std::vector<long long> &rows, const std::string &col);
     DataFrameView iloc(const std::vector<long long> &rows, const std::vector<long long> &cols);
     DataFrameView iloc(const std::vector<long long> &rows, const std::vector<std::string> &cols);
     DataFrameView iloc(const std::vector<long long> &rows,
                        std::initializer_list<const char *> cols);
-    //DataFrameView iloc(const std::vector<long long> &rows, const std::vector<const char *> &cols);
+    // DataFrameView iloc(const std::vector<long long> &rows, const std::vector<const char *>
+    // &cols);
 
     std::string iloc_str_(size_t i, size_t j); // Always positive integer.
 
     // Modify
-    void insert(int k, const std::string &name, DType type);
-    void insert(int k, Series &&column);
-    void insert(int k, const std::string &name, Series column);
+    void insert_col(int k, const std::string &name, DType type);
+    void insert_col(int k, Series &&column);
+    void insert_col(int k, const std::string &name, Series column);
 
-    void append(const std::string &name, DType type); // blank column
-    void append(Series &&column);
-    void append(const std::string &name, Series column);
-    void append_columns(std::vector<Series> &&columns);
+    void append_col(const std::string &name, DType type); // blank column
+    void append_col(Series &&column);
+    void append_col(const std::string &name, Series column);
+    void append_cols(std::vector<Series> &&columns);
 
     // Insert a new blank row.
     void append_row();
@@ -85,7 +84,7 @@ public:
     friend DataFrame operator*(const DataFrameView &lhs, const DataFrame &rhs);
     friend DataFrame operator/(const DataFrameView &lhs, const DataFrame &rhs);
 
-    //Scalar boolean
+    // Scalar boolean
     template <supported_type S> friend DataFrame operator>(const DataFrame &lhs, const S &rhs);
     template <supported_type S> friend DataFrame operator<(const DataFrame &lhs, const S &rhs);
     template <supported_type S> friend DataFrame operator>=(const DataFrame &lhs, const S &rhs);
@@ -123,7 +122,7 @@ public:
 
     ~DataFrame();
 
-private:
+  private:
     DataFrameShape _shape{0, 0};
     std::multimap<std::string, size_t> _column_map;
 

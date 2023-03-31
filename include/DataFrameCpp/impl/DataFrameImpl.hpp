@@ -5,8 +5,8 @@
 
 #include "../DataFrame.hpp"
 #include "../DataFrameView.hpp"
-//#include <fmt/format.h>
-#include<iomanip>
+// #include <fmt/format.h>
+#include <iomanip>
 
 namespace dfc {
 inline std::string DataFrame::_find_valid_column_name(const std::string &name) {
@@ -23,17 +23,17 @@ inline std::string DataFrame::_find_valid_column_name(const std::string &name) {
         }
         if (_cnt >= max_cnt) {
             std::cerr << std::format(
-                    "Can find a proper new name for current name {}, please set manually.",
-                    name)
-                << std::endl;
+                             "Can find a proper new name for current name {}, please set manually.",
+                             name)
+                      << std::endl;
             return "";
         }
     }
     return new_name;
 }
 
-inline void DataFrame::append(const std::string &name, DType type) {
-    //std::string new_name = _find_valid_column_name(name);
+inline void DataFrame::append_col(const std::string &name, DType type) {
+    // std::string new_name = _find_valid_column_name(name);
 
     _values.push_back(new Series(name, type));
     _values.back()->resize(_shape[0]);
@@ -41,12 +41,12 @@ inline void DataFrame::append(const std::string &name, DType type) {
     ++_shape[1];
 }
 
-inline void dfc::DataFrame::insert(int k, const std::string &name, Series column) {
+inline void dfc::DataFrame::insert_col(int k, const std::string &name, Series column) {
     column.rename(name);
-    insert(k, std::move(column));
+    insert_col(k, std::move(column));
 }
 
-inline void dfc::DataFrame::insert(int k, Series &&column) {
+inline void dfc::DataFrame::insert_col(int k, Series &&column) {
     if (k > _shape[1]) {
         std::cerr << "k is larger than total columns, failed to insert." << std::endl;
         return;
@@ -62,13 +62,13 @@ inline void dfc::DataFrame::insert(int k, Series &&column) {
     }
     if (column.size() != _shape[0]) {
         std::cerr << "[append]: Column " << column.name() << " has " << column.size()
-            << " rows which is not equal to " << _shape[0] << ". Failed to insert."
-            << std::endl;
+                  << " rows which is not equal to " << _shape[0] << ". Failed to insert."
+                  << std::endl;
         return;
     }
     // std::string new_name = _find_valid_column_name(column.name());
     // column.rename(new_name);
-    for (auto &[_,v] : _column_map) {
+    for (auto &[_, v] : _column_map) {
         if (v >= k)
             ++v;
     }
@@ -78,7 +78,7 @@ inline void dfc::DataFrame::insert(int k, Series &&column) {
     _shape[1]++;
 }
 
-inline void DataFrame::append(Series &&column) {
+inline void DataFrame::append_col(Series &&column) {
     // If insert the first column, then set row size.
     if (_shape[1] == 0) {
         _column_map.insert(std::pair{column.name(), 0});
@@ -87,12 +87,11 @@ inline void DataFrame::append(Series &&column) {
         //_column_map[column.name()] = _shape[1];
         _shape[1]++;
         return;
-
     }
     if (column.size() != _shape[0]) {
         std::cerr << "[append]: Column " << column.name() << " has " << column.size()
-            << " rows which is not equal to " << _shape[0] << ". Failed to insert."
-            << std::endl;
+                  << " rows which is not equal to " << _shape[0] << ". Failed to insert."
+                  << std::endl;
         return;
     }
     // std::string new_name = _find_valid_column_name(column.name());
@@ -102,9 +101,9 @@ inline void DataFrame::append(Series &&column) {
     _shape[1]++;
 }
 
-inline void dfc::DataFrame::append(const std::string &name, Series column) {
+inline void dfc::DataFrame::append_col(const std::string &name, Series column) {
     column.rename(name);
-    append(std::move(column));
+    append_col(std::move(column));
 }
 
 //
@@ -122,13 +121,12 @@ inline void dfc::DataFrame::append(const std::string &name, Series column) {
 //     _values = columns;
 // }
 
-inline void DataFrame::append_columns(std::vector<Series> &&columns) {
+inline void DataFrame::append_cols(std::vector<Series> &&columns) {
     for (auto &&c : columns) {
-        append(std::move(c));
+        append_col(std::move(c));
     }
     _index->resize(_shape[0]);
 }
-
 
 inline void DataFrame::append_row() {
     for (auto &c : _values) {
@@ -138,7 +136,7 @@ inline void DataFrame::append_row() {
     _index->push_back();
 }
 
-inline DataFrame::DataFrame(std::initializer_list<Series> columns) { append_columns(columns); }
+inline DataFrame::DataFrame(std::initializer_list<Series> columns) { append_cols(columns); }
 
 inline DataFrame::DataFrame(const std::vector<std::string> &columns,
                             const std::vector<DType> &types) {
@@ -146,10 +144,10 @@ inline DataFrame::DataFrame(const std::vector<std::string> &columns,
     if (N != types.size()) {
         std::cerr << std::format("Size of columns and types are not equal: {} and {}.", N,
                                  types.size())
-            << std::endl;
+                  << std::endl;
     } else {
         for (size_t i = 0; i < N; ++i) {
-            append(columns[i], types[i]);
+            append_col(columns[i], types[i]);
         }
     }
 }
@@ -168,18 +166,15 @@ inline dfc::DataFrame::DataFrame(const DataFrameView &view)
     for (int i = 0; i < view._values.size(); ++i) {
         auto &c = view._values[i];
         auto new_c = new Series(*(view._values[i]));
-        //auto new_name = _find_valid_column_name(new_c->name());
-        //new_c->rename(new_name);
+        // auto new_name = _find_valid_column_name(new_c->name());
+        // new_c->rename(new_name);
         _column_map.insert(std::pair{new_c->name(), i});
         //_column_map[new_name] = i;
         _values.push_back(new_c);
     }
 }
 
-inline dfc::DataFrame::DataFrame(std::shared_ptr<Index> index)
-    : _index(index) {
-
-}
+inline dfc::DataFrame::DataFrame(std::shared_ptr<Index> index) : _index(index) {}
 
 inline dfc::DataFrame::DataFrame(std::shared_ptr<ViewIndex> index)
     : _index(std::make_shared<Index>(*index)), _shape({index->size(), 0}) {
@@ -253,7 +248,6 @@ inline DataFrameView DataFrame::operator[](const DataFrame &df) const {
             col->dtype_name());
         return DataFrameView();
     }
-
 }
 
 inline DataFrameView DataFrame::iloc(const std::vector<long long> &rows,
@@ -271,10 +265,10 @@ inline dfc::DataFrameView dfc::DataFrame::iloc(const std::vector<long long> &row
     return iloc(rows, vec_ccharp_to_vec_str(cols));
 }
 
-//dfc::DataFrameView dfc::DataFrame::iloc(const std::vector<long long> &rows,
-//                                        const std::vector<const char *> &cols) {
-//    return DataFrameView(*this, rows, vec_ccharp_to_vec_str(cols));
-//}
+// dfc::DataFrameView dfc::DataFrame::iloc(const std::vector<long long> &rows,
+//                                         const std::vector<const char *> &cols) {
+//     return DataFrameView(*this, rows, vec_ccharp_to_vec_str(cols));
+// }
 
 inline std::string dfc::DataFrame::iloc_str_(size_t i, size_t j) { return _values[j]->iloc_str(i); }
 
@@ -306,7 +300,7 @@ inline DataFrame dfc::DataFrame::copy() const {
 template <typename T> T inline dfc::DataFrame::to_eigen() const { return to_eigen<T>(columns()); }
 
 template <typename T> inline T DataFrame::to_eigen(const std::vector<std::string> &l) const {
-    //Count cols.
+    // Count cols.
     int total_columns = 0;
     for (auto &cn : l) {
         total_columns += _column_map.count(cn);
@@ -326,34 +320,17 @@ template <typename T> inline T DataFrame::to_eigen(const std::vector<std::string
             }
         } else {
             std::cerr << std::format("This dataframe doesn't have a column {}.", col_name)
-                << std::endl;
+                      << std::endl;
         }
-
     }
     return res;
 }
 
-#define _DATAFRAME_BIN_OP_IMPL(op)                                                       \
-    inline DataFrame operator op(const DataFrame &lhs,const DataFrame &rhs) {                                         \
-        if (lhs._shape != rhs._shape) {                                                                \
-            std::string info =                                                                     \
-                std::format("[DataFrame]: two data frame has different shape: ({}, {}), ({},{}).", \
-                            lhs._shape[0], lhs._shape[1], rhs._shape[0], rhs._shape[1]);                   \
-            std::cerr << info << std::endl;                                                        \
-            throw(std::runtime_error(info));                                                       \
-            return DataFrame();                                                                    \
-        } else {                                                                                   \
-            DataFrame df(lhs._index);                                                                  \
-            for (int i = 0; i < lhs._shape[1]; ++i) {                                          \
-                df.append(std::move(*(lhs._values[i]) op *(rhs._values[i])));                                    \
-            }                                                                                      \
-            return df;                                                                             \
-        }                                                                                          \
-    }\
-    inline DataFrame operator op(const DataFrame &lhs, const DataFrameView &rhs) {                            \
+#define _DATAFRAME_BIN_OP_IMPL(op)                                                                 \
+    inline DataFrame operator op(const DataFrame &lhs, const DataFrame &rhs) {                     \
         if (lhs._shape != rhs._shape) {                                                            \
             std::string info =                                                                     \
-                std::format("[DataFrame]: DataFrame and DataFrameView: ({}, {}), ({},{}).", \
+                std::format("[DataFrame]: two data frame has different shape: ({}, {}), ({},{}).", \
                             lhs._shape[0], lhs._shape[1], rhs._shape[0], rhs._shape[1]);           \
             std::cerr << info << std::endl;                                                        \
             throw(std::runtime_error(info));                                                       \
@@ -361,12 +338,28 @@ template <typename T> inline T DataFrame::to_eigen(const std::vector<std::string
         } else {                                                                                   \
             DataFrame df(lhs._index);                                                              \
             for (int i = 0; i < lhs._shape[1]; ++i) {                                              \
-                df.append(std::move(*(lhs._values[i])op *(rhs._values[i])));                       \
+                df.append_col(std::move(*(lhs._values[i])op *(rhs._values[i])));                   \
             }                                                                                      \
             return df;                                                                             \
         }                                                                                          \
-    }\
-inline DataFrame operator op(const DataFrameView &rhs, const DataFrame &lhs) {                 \
+    }                                                                                              \
+    inline DataFrame operator op(const DataFrame &lhs, const DataFrameView &rhs) {                 \
+        if (lhs._shape != rhs._shape) {                                                            \
+            std::string info =                                                                     \
+                std::format("[DataFrame]: DataFrame and DataFrameView: ({}, {}), ({},{}).",        \
+                            lhs._shape[0], lhs._shape[1], rhs._shape[0], rhs._shape[1]);           \
+            std::cerr << info << std::endl;                                                        \
+            throw(std::runtime_error(info));                                                       \
+            return DataFrame();                                                                    \
+        } else {                                                                                   \
+            DataFrame df(lhs._index);                                                              \
+            for (int i = 0; i < lhs._shape[1]; ++i) {                                              \
+                df.append_col(std::move(*(lhs._values[i])op *(rhs._values[i])));                   \
+            }                                                                                      \
+            return df;                                                                             \
+        }                                                                                          \
+    }                                                                                              \
+    inline DataFrame operator op(const DataFrameView &rhs, const DataFrame &lhs) {                 \
         return lhs op rhs;                                                                         \
     }
 
@@ -388,9 +381,8 @@ DataFrameCpp_DataFrame_Or_View_Scalar_Bin_Op(DataFrame, ||);
 
 #include "../macro/undef_dataframe_dataframeview_op.h"
 
-
 inline dfc::DataFrame::~DataFrame() {
-    //std::cout << "Destroy dataframe." << std::endl;
+    // std::cout << "Destroy dataframe." << std::endl;
     for (auto &p : _values)
         delete p;
 }

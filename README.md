@@ -11,7 +11,7 @@ If performance is critical, I suggest you to try [hosseinmoein/DataFrame](https:
 Other limitations are:
 
 1. You need a C++ 20 compilier.
-2. It depends on some external libaries: `Eigen`, `boost`. I don't like re-invent wheels.
+2. It depends on some external libaries: `Eigen`, `boost`.
 3. If you want to do more computation, you need to learn `Eigen` or `Armadillo`. This library provides some API to convert data types. It's up to you on dealing with it.
 
 This library try to provide pandas-like API, however there are some important differences except pandas is way more complete:
@@ -99,10 +99,20 @@ The data type will be automatically decided. However it's only for `double` and 
 
 ### Manully input data
 
+```cpp
+dfc::DataFrame df{{"a", {1.0, 2.0, 9.0}},
+                      {"b", {6, 8, 9}},
+                      {"c", {4, 5, 6}},
+                      {"d", {1.2, 9.7, 8.6}},
+                      {"e", {"A", "B", "C"}}};
+```
 ### Create an empty DataFrame and set data later
 
 ```cpp
-DataFrame<int, Series> df({"a","b","c"},{DType::STRING,DType::DOUBLE, DType::INT});  //3 colums.
+dfc::DataFrame df({"a","b","c"},{DType::STRING,DType::DOUBLE, DType::INT});  //3 colums.
+
+df.append("f", dfc::DType::STRING); //blank column
+df.append("g", {"11", "12", "13"});
 ```
 
 ### Subscription
