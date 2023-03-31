@@ -3,6 +3,8 @@
 // @kilasuelika
 // May 19, 2022
 
+#include <filesystem>
+
 #include "DataFrame.hpp"
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string/trim_all.hpp>
@@ -12,7 +14,7 @@
 namespace dfc {
 
 // Data type and colnames.
-std::pair<std::vector<std::string>, std::vector<DType>>
+inline std::pair<std::vector<std::string>, std::vector<DType>>
 guess_column_types(const std::string &filename, const CSVIOOptions &options = CSVIOOptions()) {
     std::ifstream file(filename);
 
@@ -20,8 +22,8 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
 
         std::vector<std::string> columns;
         std::vector<std::array<long long, 3>> type_counts; // [double, string, int].
-        std::string separator1("");     // dont let quoted arguments escape themselves
-        std::string separator2(",");    // ·Ö¸î
+        std::string separator1(""); // dont let quoted arguments escape themselves
+        std::string separator2(","); // ·Ö¸î
         std::string separator3("\"\'"); // let it have quoted arguments
         boost::escaped_list_separator<char> els(separator1, separator2, separator3);
 
@@ -34,6 +36,13 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
             std::getline(file, line);
         } while (line.empty());
 
+        //header
+        //Remove BOM.
+        const std::array<unsigned char, 3> boms{0xef, 0xbb, 0xbf};
+        std::string_view sv{(char *)boms.data(), boms.size()};
+        if (line.starts_with(sv)) {
+            line = line.substr(3, line.size() - 3);
+        }
         boost::tokenizer<boost::escaped_list_separator<char>> tok(line, els);
         for (auto beg = tok.begin(); beg != tok.end(); ++beg) {
             if (options._header == 0) {
@@ -60,7 +69,7 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
                 for (auto beg = tok.begin(); beg != tok.end(); ++beg) {
                     if (i > C) {
                         std::cerr << "[guess_row]: Line " << line_cnt << " has " << i
-                                  << " columns which is not equal to previous one." << std::endl;
+                            << " columns which is not equal to previous one." << std::endl;
                     }
 
                     std::string token = *beg;
@@ -73,7 +82,12 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
                             ++type_counts[i][0];
                             contain_double[i] = true;
                         } catch (...) {
-                            ++type_counts[i][1];
+                            if (token.empty() || (token == ".") || (token == "-")) {
+                                contain_double[i] = true;
+                                ++type_counts[i][0];
+                            } else {
+                                ++type_counts[i][1];
+                            }
                         }
                     } else {
                         try {
@@ -87,7 +101,12 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
                                 ++type_counts[i][0];
                                 contain_double[i] = true;
                             } catch (...) {
-                                ++type_counts[i][1];
+                                if (token.empty() || (token == ".") || (token == "-")) {
+                                    contain_double[i] = true;
+                                    ++type_counts[i][0];
+                                } else {
+                                    ++type_counts[i][1];
+                                }
                             }
                         }
                     }
@@ -103,15 +122,15 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
         std::transform(type_counts.begin(), type_counts.end(), types.begin(),
                        [double_threshold(options.double_threshold)](const auto &ele) -> DType {
                            if (ele[0] > 0) {
-                               if ((static_cast<double>(ele[0]) / (ele[0] + ele[1] + ele[2])) >
-                                   double_threshold) {
+                               //No int, no string, then double.
+                               if (ele[1] == 0 && ele[2] == 0) {
                                    return DType::DOUBLE;
                                } else {
                                    return DType::STRING;
                                }
                            } else {
-                               if ((static_cast<double>(ele[2]) / (ele[0] + ele[1] + ele[2])) >
-                                   double_threshold) {
+                               //No double, no string, then int.
+                               if (ele[1] == 0) {
                                    return DType::INT;
                                } else {
                                    return DType::STRING;
@@ -128,7 +147,13 @@ guess_column_types(const std::string &filename, const CSVIOOptions &options = CS
         std::cerr << "[read_csv]: Failed to open file " << filename << "." << std::endl;
     }
 }
-DataFrame read_csv(const std::string &filename, const CSVIOOptions &options = CSVIOOptions()) {
+
+inline DataFrame read_csv(const std::string &filename,
+                          const CSVIOOptions &options = CSVIOOptions()) {
+    if (!std::filesystem::exists(std::filesystem::path(filename))) {
+        std::cerr << "[read_csv]: File " << filename << " doesn't exists." << std::endl;
+        return DataFrame();
+    }
     auto [columns, types] = guess_column_types(filename, options);
     std::ifstream file(filename);
 
@@ -140,9 +165,10 @@ DataFrame read_csv(const std::string &filename, const CSVIOOptions &options = CS
     boost::escaped_list_separator<char> els(separator1, separator2, separator3);
 
     DataFrame df(columns, types);
-    // std::cout << df << std::endl;
+    //std::cout << df << std::endl;
     int r = 0;
     while (std::getline(file, line)) {
+        // std::cout << r << std::endl;
         if (r > options._header) {
             df.append_row();
             boost::tokenizer<boost::escaped_list_separator<char>> tok(line, els);

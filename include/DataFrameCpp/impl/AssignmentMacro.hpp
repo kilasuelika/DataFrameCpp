@@ -117,11 +117,11 @@
         for (size_t i = 0; i < N; ++i) {                                                           \
             res[i] = iloc_<T1>(i) OP obj.iloc_<T2>(i);                                             \
         }                                                                                          \
-        return std::move(res);                                                                     \
+        return Series(std::move(res));                                                                     \
     }
 
 #define DataFrameCpp_SERIES_OR_VIEW_ARITHMETIC_BIN_OP_(LHS_TYPE, RHS_TYPE, FUNC, OP)               \
-    Series LHS_TYPE::operator OP(const RHS_TYPE &obj) {                                            \
+  inline Series LHS_TYPE::operator OP(const RHS_TYPE &obj) {                                            \
         Series res;                                                                                \
         switch (dtype()) {                                                                         \
         case DType::BOOL:                                                                          \
@@ -236,15 +236,15 @@
     }
 
 #define DataFrameCpp_SERIES_SERIES_ARITH_BIN_OP_IMPL_(OP, FUNCNAME)                                \
-    Series Series::operator OP(const Series &obj) {                                                \
-        Series res(obj.size());                                                                    \
+  inline Series Series::operator OP(const Series &obj) {                                                \
+        Series res(*this);                                                                    \
         DataFrameCpp_ASSGNMENT_SWITCH_CASE_(FUNCNAME, res.);                                       \
         return res;                                                                                \
     }
 
 #define DataFrameCpp_DATAFRAME_OR_DATAFRAMEVIEW_BIN_OP_IMPL_(LHS_TYPE, RHS_TYPE, OP,               \
-                                                             SERIES_OP_ASSIGNMENT_FUNCNAME)        \
-    DataFrame LHS_TYPE::operator OP(const RHS_TYPE &obj) {                                         \
+    SERIES_OP_ASSIGNMENT_FUNCNAME)        \
+  inline DataFrame LHS_TYPE::operator OP(const RHS_TYPE &obj) {                                         \
         DataFrame res(*this);                                                                      \
         if (_shape != obj._shape) {                                                                \
             std::cout                                                                              \
@@ -272,8 +272,8 @@
     }
 
 #define DataFrameCpp_SERIES_OR_VIEW_SELF_ARITHMETIC_BIN_OP_IMPL(LHS_TYPE, RHS_TYPE, op,            \
-                                                                MEMBER_NAME)                       \
-    LHS_TYPE &LHS_TYPE::operator op(const RHS_TYPE &obj) {                                         \
+    MEMBER_NAME)                       \
+   inline LHS_TYPE &LHS_TYPE::operator op(const RHS_TYPE &obj) {                                         \
         if (size() != obj.size()) {                                                                \
             std::string info = std::format(                                                        \
                 "[" #LHS_TYPE "]: two series has different length: {}, {} for " #op ".", size(),   \

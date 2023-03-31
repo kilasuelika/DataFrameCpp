@@ -11,73 +11,98 @@
 #include <map>
 #include "Index.hpp"
 
-// Keep index of left operand.
-#define _DATAFRAME_BIN_OP_IMPL(op)                                                                 \
-    DataFrame DataFrame::operator op(DataFrame const &obj) {                                       \
-        if (_shape != obj._shape) {                                                                \
-            std::string info =                                                                     \
-                std::format("[DataFrame]: two data frame has different shape: ({}, {}), ({},{}).", \
-                            _shape[0], _shape[1], obj._shape[0], obj._shape[1]);                   \
-            std::cerr << info << std::endl;                                                        \
-            throw(std::runtime_error(info));                                                       \
-            return DataFrame();                                                                    \
-        } else {                                                                                   \
-            DataFrame df(*this);                                                                   \
-            for (size_t i = 0; i < _values.size(); ++i) {                                          \
-                *(df._values[i])op## = *(obj._values[i]);                                          \
-            }                                                                                      \
-            return df;                                                                             \
-        }                                                                                          \
-    }
-
 namespace dfc {
 
 class DataFrameView;
 
 class DataFrame {
-  public:
+public:
     friend DataFrameView;
 
     // Constructor
-    DataFrame(){};
+    DataFrame() {
+    };
     DataFrame(std::initializer_list<Series> columns);
     // Blank DataFrame.
     DataFrame(const std::vector<std::string> &columns, const std::vector<DType> &types);
 
     DataFrame(const DataFrame &df);
-    DataFrame(const DataFrameView &view);
+    explicit DataFrame(const DataFrameView &view);
+    explicit DataFrame(std::shared_ptr<Index> index);
+    explicit DataFrame(std::shared_ptr<ViewIndex> index);
 
     // info
+    std::vector<DType> dtypes() const;
     const DataFrameShape &shape() const;
+    bool empty() const;
+    DataFrameView head(int n = 5) const;
+    void describe() const; //print column name and type.
+
     std::vector<std::string> columns() const;
 
     // Subscripts.
     // SeriesView operator[](const std::string &col);
     DataFrameView operator[](const std::string &col) const;
+    DataFrameView operator[](const DataFrame &col) const;
 
-    template <typename T> T &iloc(long long i, long long j);
+
+    template <typename T> T &iloc(long long i, long long j = 0);
     // SeriesView iloc(const std::vector<long long> &rows, const std::string &col);
     DataFrameView iloc(const std::vector<long long> &rows, const std::vector<long long> &cols);
+    DataFrameView iloc(const std::vector<long long> &rows, const std::vector<std::string> &cols);
+    DataFrameView iloc(const std::vector<long long> &rows,
+                       std::initializer_list<const char *> cols);
+    //DataFrameView iloc(const std::vector<long long> &rows, const std::vector<const char *> &cols);
+
     std::string iloc_str_(size_t i, size_t j); // Always positive integer.
 
     // Modify
-    void insert_column(int k, const std::string&name, DType type);
-    void insert_column(int k, Series &&column);
-    void insert_column(int k, const std::string &name, Series column);
+    void insert(int k, const std::string &name, DType type);
+    void insert(int k, Series &&column);
+    void insert(int k, const std::string &name, Series column);
 
-    void append_column(const std::string &name, DType type); // blank column
-    void append_column(Series &&column);
-    void append_column(const std::string &name, Series column);
+    void append(const std::string &name, DType type); // blank column
+    void append(Series &&column);
+    void append(const std::string &name, Series column);
     void append_columns(std::vector<Series> &&columns);
 
     // Insert a new blank row.
     void append_row();
 
     // Arithmetic
-    DataFrame operator+(DataFrame const &obj);
-    DataFrame operator-(DataFrame const &obj);
-    DataFrame operator*(DataFrame const &obj);
-    DataFrame operator/(DataFrame const &obj);
+    friend DataFrame operator+(const DataFrame &lhs, const DataFrame &rhs);
+    friend DataFrame operator-(const DataFrame &lhs, const DataFrame &rhs);
+    friend DataFrame operator*(const DataFrame &lhs, const DataFrame &rhs);
+    friend DataFrame operator/(const DataFrame &lhs, const DataFrame &rhs);
+
+    friend DataFrame operator+(const DataFrame &lhs, const DataFrameView &rhs);
+    friend DataFrame operator-(const DataFrame &lhs, const DataFrameView &rhs);
+    friend DataFrame operator*(const DataFrame &lhs, const DataFrameView &rhs);
+    friend DataFrame operator/(const DataFrame &lhs, const DataFrameView &rhs);
+
+    friend DataFrame operator+(const DataFrameView &lhs, const DataFrame &rhs);
+    friend DataFrame operator-(const DataFrameView &lhs, const DataFrame &rhs);
+    friend DataFrame operator*(const DataFrameView &lhs, const DataFrame &rhs);
+    friend DataFrame operator/(const DataFrameView &lhs, const DataFrame &rhs);
+
+    //Scalar boolean
+    template <supported_type S> friend DataFrame operator>(const DataFrame &lhs, const S &rhs);
+    template <supported_type S> friend DataFrame operator<(const DataFrame &lhs, const S &rhs);
+    template <supported_type S> friend DataFrame operator>=(const DataFrame &lhs, const S &rhs);
+    template <supported_type S> friend DataFrame operator<=(const DataFrame &lhs, const S &rhs);
+    template <supported_type S> friend DataFrame operator==(const DataFrame &lhs, const S &rhs);
+    template <supported_type S> friend DataFrame operator!=(const DataFrame &lhs, const S &rhs);
+    template <supported_type S> friend DataFrame operator&&(const DataFrame &lhs, const S &rhs);
+    template <supported_type S> friend DataFrame operator||(const DataFrame &lhs, const S &rhs);
+
+    template <supported_type S> friend DataFrame operator>(const S &rhs, const DataFrame &lhs);
+    template <supported_type S> friend DataFrame operator<(const S &rhs, const DataFrame &lhs);
+    template <supported_type S> friend DataFrame operator>=(const S &rhs, const DataFrame &lhs);
+    template <supported_type S> friend DataFrame operator<=(const S &rhs, const DataFrame &lhs);
+    template <supported_type S> friend DataFrame operator==(const S &rhs, const DataFrame &lhs);
+    template <supported_type S> friend DataFrame operator!=(const S &rhs, const DataFrame &lhs);
+    template <supported_type S> friend DataFrame operator&&(const S &rhs, const DataFrame &lhs);
+    template <supported_type S> friend DataFrame operator||(const S &rhs, const DataFrame &lhs);
 
     // conversion
     DataFrame copy() const;
@@ -90,15 +115,15 @@ class DataFrame {
     const std::vector<Series *> &values() const;
     // const std::unordered_map<std::string, size_t> &get_column_map() const;
     //  IO
-    friend std::ostream &operator<<(std::ostream &os, const struct DataFrame &dt);
+    friend std::ostream &operator<<(std::ostream &os, const DataFrame &dt);
     void to_csv(const std::string &filename, const CSVIOOptions &options = CSVIOOptions()) const;
 
     std::vector<Series *> _values;
-    Index _index;
+    std::shared_ptr<Index> _index = std::make_shared<Index>();
 
     ~DataFrame();
 
-  private:
+private:
     DataFrameShape _shape{0, 0};
     std::multimap<std::string, size_t> _column_map;
 

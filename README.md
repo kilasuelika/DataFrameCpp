@@ -11,37 +11,45 @@ If performance is critical, I suggest you to try [hosseinmoein/DataFrame](https:
 Other limitations are:
 
 1. You need a C++ 20 compilier.
-2. It depends on some external libaries: `Eigen`, `boost.lexical_cast`, `boost.tokenizer`. I don't like re-invent wheels.
+2. It depends on some external libaries: `Eigen`, `boost`. I don't like re-invent wheels.
 3. If you want to do more computation, you need to learn `Eigen` or `Armadillo`. This library provides some API to convert data types. It's up to you on dealing with it.
 
 This library try to provide pandas-like API, however there are some important differences except pandas is way more complete:
 
-1. Doesn't support view.
+1. Subscripts usually return a view reffers to the original dataframe. Different rows in a view may refer to the same element.
 
-1. Most modifications happen **in place** and there is no `in_place` option like pandas. In my own experience with pandas, I find it's really a pain to set `in_place = true` every time.
+If you remove rows from the original dataframe, then you shouldn't use views created form the dataframe any more.
 
-2. Subscripts usually return a view and you can't add or delete elements from a view. But you can use `copy` to get a new dataframe.
+2. Most modifications happen **in place** and there is no `in_place` option like pandas. In my own experience with pandas, I find it's really a pain to set `in_place = true` every time.
+
+3. You can't use subscripts to create a new column. Because I use vector of primitive data types. So there is no direct way to represent `None`.
 
 ## Task
 
-- [ ] View
-- [ ] Index
-- [ ] Data assignment
-- [ ] Arithmetic
+- [ ] `DATE` and `DATETIME` data types using `boost.datetime`
+- [ ] `apply`
+- [ ] `string` Index
+- [ ] Statistical functions
 - [ ] Dump to binary and load
 
 ## Installation
 
 It's a header-only library.
 
-## Hellow world Example
+## Examples
 
+### Hellow World
 ```cpp
-#include "DataFrameCpp/DataFrameCpp.hpp"
+
+#include "DataFrameCpp/include/DataFrameCpp/DataFrameCpp.hpp"
 
 int main() {
-    dfc::DataFrame<int, dfc::Series> df{{"a", {1.0, 2.0, 9.0}}, {"b", {6, 8, 9}}};
-    std::cout << df.iloc<double>(0, 0) << std::endl;
+    dfc::DataFrame df{{"a", {1.0, 2.0, 9.0}},
+                      {"b", {6, 8, 9}},
+                      {"c", {4, 5, 6}},
+                      {"d", {1.2, 9.7, 8.6}},
+                      {"e", {"A", "B", "C"}}};
+
     std::cout << df << std::endl;
 }
 ```
@@ -49,23 +57,28 @@ int main() {
 Output:
 
 ```
-         a         b
-    double       int
-         1         6
-         2         8
-         9         9
-Shape: (3, 2)
+           [0]       [1]       [2]       [3]       [4]
+             a         b         c         d         e
+        double       int       int    double    string
+   0         1         6         4       1.2         A
+   1         2         8         5       9.7         B
+   2         9         9         6       8.6         C
+Index:  (trival)
+Shape: (3, 5)
 ```
 
-## Initializing DataFrame
+### A More Complated Example
 
-### Availiable data types
+
+## Usages
+
+### Availiable Column Data Types
 
 ```cpp
-enum DType { NONE, STRING, BOOL, INT, LONGLONG, FLOAT, DOUBLE };
+enum DType { NONE = 0, STRING, BOOL, INT, LONGLONG, FLOAT, DOUBLE, DATE, DATETIME, DATEDURATION, TIMEDURATION };
 ```
 
-### Read From CSV Files
+### Read from CSV Files
 
 Given a `df1.csv` file:
 
@@ -92,17 +105,14 @@ The data type will be automatically decided. However it's only for `double` and 
 DataFrame<int, Series> df({"a","b","c"},{DType::STRING,DType::DOUBLE, DType::INT});  //3 colums.
 ```
 
-## Subscription
+### Subscription
 
-### By integer position
+#### By integer position
 
-### By index
+#### By index
 
-## Convertion
+### Computation
 
-## Computation
-
-### Basic arithmetic operation
 
 ## Reference
 

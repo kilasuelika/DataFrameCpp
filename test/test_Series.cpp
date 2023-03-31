@@ -4,9 +4,9 @@
 // May 19, 2022
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/tools/floating_point_comparison.hpp>
 
-#include "../include/DataFrameCpp/Series.hpp"
+#include "../include/DataFrameCpp/impl/SeriesImpl.hpp"
 
 BOOST_AUTO_TEST_SUITE(test_Series)
 
@@ -28,4 +28,5 @@ BOOST_AUTO_TEST_CASE(series_subscripts) {
     BOOST_CHECK(s0.iloc<double>(2) == 3.0);
     BOOST_CHECK(s1.iloc<double>(-1) == 6.0);
 }
+
 BOOST_AUTO_TEST_SUITE_END()

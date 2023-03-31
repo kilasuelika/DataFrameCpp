@@ -1,0 +1,1 @@
+#undef DataFrameCpp_DataFrame_Or_View_Scalar_Bin_Op

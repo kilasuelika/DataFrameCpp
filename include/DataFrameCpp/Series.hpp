@@ -27,32 +27,33 @@ template <typename T> class SeriesIterator;
 
 // A Series doesn't have index and can only be subscripted by number.
 class Series {
-  public:
+public:
     // Constructor
     // mono-state
-    Series(size_t n);
-    template <typename T> Series(const std::vector<T> &data);
-    template <typename T> Series(std::vector<T> &&data);
+    explicit Series(size_t n);
+    template <typename T> explicit Series(const std::vector<T> &data);
+    template <typename T> explicit Series(std::vector<T> &&data);
     template <typename T> Series(const std::string &name, std::vector<T> data);
     template <typename T> Series(const std::string &name, std::vector<T> &&data);
-    
+
 
     // Blank column
     // template <typename T>
     // Series(const std::string &name , size_t size); // Blank series with specific size.
-    Series(const std::string &name, DType type);
+    Series(const std::string &name, DType type, size_t sz = 0);
     template <typename T> Series(std::initializer_list<T> l);
     template <typename T> Series(const std::string &name, std::initializer_list<T> l);
 
     Series(const Series &new_series);
     Series(Series &&new_series);
 
-    Series(const SeriesView &view);
+    explicit Series(const SeriesView &view);
 
     // Assignment
     Series &operator=(const Series &A);
 
-    Series(){}; // Default constructor, do nothing.
+    Series() {
+    }; // Default constructor, do nothing.
 
     // info
     const std::string &name() const;
@@ -81,6 +82,20 @@ class Series {
 
     // Conversion
     template <typename T> void astype();
+
+    // Modification
+    template <typename T> void reserve(size_t sz);
+    void resize(size_t sz);
+
+    // Insert a blank elements.
+    void push_back();
+    template <typename T> void push_back_();
+    template <typename T> void push_back(const T &v);
+    //
+    const SeriesType &values() const;
+    template <typename T> std::vector<T> asvector() const;
+    template <typename T> const std::vector<T> &vector() const;
+    template <typename T> std::vector<T> &_vector();
 
     // arithmetic
     Series &operator+=(const Series &obj);
@@ -123,32 +138,70 @@ class Series {
     Series operator*(const Series &obj);
     Series operator/(const Series &obj);
 
-    // Modification
-    template <typename T> void reserve(size_t sz);
-    void resize(size_t sz);
+    friend Series operator>(const Series &lhs, const Series &rhs);
+    friend Series operator<(const Series &lhs, const Series &rhs);
+    friend Series operator>=(const Series &lhs, const Series &rhs);
+    friend Series operator<=(const Series &lhs, const Series &rhs);
+    friend Series operator==(const Series &lhs, const Series &rhs);
+    friend Series operator!=(const Series &lhs, const Series &rhs);
+    friend Series operator&&(const Series &lhs, const Series &rhs);
+    friend Series operator||(const Series &lhs, const Series &rhs);
 
-    // Insert a blank elements.
-    void push_back();
-    template <typename T> void push_back_();
-    template <typename T> void push_back(const T &v);
-    //
-    const SeriesType &values() const;
+    friend Series operator>(const Series &lhs, const SeriesView &rhs);
+    friend Series operator<(const Series &lhs, const SeriesView &rhs);
+    friend Series operator>=(const Series &lhs, const SeriesView &rhs);
+    friend Series operator<=(const Series &lhs, const SeriesView &rhs);
+    friend Series operator==(const Series &lhs, const SeriesView &rhs);
+    friend Series operator!=(const Series &lhs, const SeriesView &rhs);
+    friend Series operator&&(const Series &lhs, const SeriesView &rhs);
+    friend Series operator||(const Series &lhs, const SeriesView &rhs);
 
-    template<typename T> std::vector<T> asvector() const;
-    template <typename T> const std::vector<T> &vector() const;
+    friend Series operator>(const SeriesView &lhs, const Series &rhs);
+    friend Series operator<(const SeriesView &lhs, const Series &rhs);
+    friend Series operator>=(const SeriesView &lhs, const Series &rhs);
+    friend Series operator<=(const SeriesView &lhs, const Series &rhs);
+    friend Series operator==(const SeriesView &lhs, const Series &rhs);
+    friend Series operator!=(const SeriesView &lhs, const Series &rhs);
+    friend Series operator&&(const SeriesView &lhs, const Series &rhs);
+    friend Series operator||(const SeriesView &lhs, const Series &rhs);
+
+    template <supported_type S> friend Series operator>(const Series &lhs, const S &rhs);
+    template <supported_type S>
+    friend Series operator<(const Series &lhs, const S &rhs);
+    template <supported_type S>
+    friend Series operator>=(const Series &lhs, const S &rhs);
+    template <supported_type S>
+    friend Series operator<=(const Series &lhs, const S &rhs);
+    template <supported_type S>
+    friend Series operator==(const Series &lhs, const S &rhs);
+    template <supported_type S>
+    friend Series operator!=(const Series &lhs, const S &rhs);
+    template <supported_type S>
+    friend Series operator&&(const Series &lhs, const S &rhs);
+    template <supported_type S>
+    friend Series operator||(const Series &lhs, const S &rhs);
+
+    template <supported_type S> friend Series operator>(const S &rhs, const Series &lhs);
+    template <supported_type S> friend Series operator<(const S &rhs, const Series &lhs);
+    template <supported_type S> friend Series operator>=(const S &rhs, const Series &lhs);
+    template <supported_type S> friend Series operator<=(const S &rhs, const Series &lhs);
+    template <supported_type S> friend Series operator==(const S &rhs, const Series &lhs);
+    template <supported_type S> friend Series operator!=(const S &rhs, const Series &lhs);
+    template <supported_type S> friend Series operator&&(const S &rhs, const Series &lhs);
+    template <supported_type S> friend Series operator||(const S &rhs, const Series &lhs);
 
     SeriesType _values;
 
     friend class SeriesView;
 
-  private:
+private:
     std::string _name;
     size_t _size;
 
     size_t _cal_index(long long i) const;
     std::vector<size_t> _cal_index(const std::vector<long long> &i) const;
 
-    template <typename T> std::vector<T> &_vector();
+
 };
 
 // template <typename T> struct SeriesIterator {

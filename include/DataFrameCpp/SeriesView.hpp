@@ -15,15 +15,17 @@ class DataFrame;
 // class Series;
 
 class SeriesView {
-  public:
-    SeriesView() {}
-    SeriesView(Series *series);
+public:
+    SeriesView() {
+    }
+
+    explicit SeriesView(Series *series);
     SeriesView(Series *series, const std::vector<size_t> &pos);
     SeriesView(Series *series, const std::vector<long long> &pos);
     SeriesView(const SeriesView *view, const std::vector<size_t> &pos);
     // SeriesView(Series *series, const Index &index);
-    SeriesView(Series *series, Index *index);
-    SeriesView(Series *series, std::shared_ptr<ViewIndex>& index);
+    SeriesView(Series *series, std::shared_ptr<Index> index);
+    SeriesView(Series *series, std::shared_ptr<ViewIndex> index);
 
     friend Series;
 
@@ -97,13 +99,40 @@ class SeriesView {
     Series operator*(const Series &obj);
     Series operator/(const Series &obj);
 
+    friend Series operator>(const SeriesView &lhs, const SeriesView &rhs);
+    friend Series operator<(const SeriesView &lhs, const SeriesView &rhs);
+    friend Series operator>=(const SeriesView &lhs, const SeriesView &rhs);
+    friend Series operator<=(const SeriesView &lhs, const SeriesView &rhs);
+    friend Series operator==(const SeriesView &lhs, const SeriesView &rhs);
+    friend Series operator!=(const SeriesView &lhs, const SeriesView &rhs);
+    friend Series operator&&(const SeriesView &lhs, const SeriesView &rhs);
+    friend Series operator||(const SeriesView &lhs, const SeriesView &rhs);
+
+    template <supported_type S> friend Series operator>(const SeriesView &lhs, const S &rhs);
+    template <supported_type S> friend Series operator<(const SeriesView &lhs, const S &rhs);
+    template <supported_type S> friend Series operator>=(const SeriesView &lhs, const S &rhs);
+    template <supported_type S> friend Series operator<=(const SeriesView &lhs, const S &rhs);
+    template <supported_type S> friend Series operator==(const SeriesView &lhs, const S &rhs);
+    template <supported_type S> friend Series operator!=(const SeriesView &lhs, const S &rhs);
+    template <supported_type S> friend Series operator&&(const SeriesView &lhs, const S &rhs);
+    template <supported_type S> friend Series operator||(const SeriesView &lhs, const S &rhs);
+
+    template <supported_type S> friend Series operator>(const S &rhs, const SeriesView &lhs);
+    template <supported_type S> friend Series operator<(const S &rhs, const SeriesView &lhs);
+    template <supported_type S> friend Series operator>=(const S &rhs, const SeriesView &lhs);
+    template <supported_type S> friend Series operator<=(const S &rhs, const SeriesView &lhs);
+    template <supported_type S> friend Series operator==(const S &rhs, const SeriesView &lhs);
+    template <supported_type S> friend Series operator!=(const S &rhs, const SeriesView &lhs);
+    template <supported_type S> friend Series operator&&(const S &rhs, const SeriesView &lhs);
+    template <supported_type S> friend Series operator||(const S &rhs, const SeriesView &lhs);
+
     // Data
     template <typename T> const std::vector<T> &vector() const;
 
     friend std::ostream &operator<<(std::ostream &os, const SeriesView &dv);
     template <typename T> friend class SeriesViewIterator;
 
-  private:
+private:
     std::shared_ptr<ViewIndex> _index;
     Series *_values;
     // DataFrame *_data;

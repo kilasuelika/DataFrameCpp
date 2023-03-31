@@ -14,9 +14,11 @@ class Index {
     friend ViewIndex;
     friend SeriesView;
 
-  public:
+public:
     // Constructor
-    Index() {}
+    Index() {
+    }
+
     Index(Series &&_values);
     Index(const Index &new_index) = default;
     Index(const ViewIndex &view);
@@ -45,7 +47,7 @@ class Index {
 
     size_t _cal_index(long long i) const;
 
-  private:
+private:
     // size_t _start = 0;
     size_t _size = 0;
 
@@ -53,14 +55,16 @@ class Index {
 };
 
 class ViewIndex {
-  public:
-    ViewIndex() {}
-    ViewIndex(size_t n);
-    ViewIndex(const std::vector<size_t> &v);
-    ViewIndex(Index *index);
-    ViewIndex(Index *index,
+public:
+    ViewIndex() {
+    }
+
+    explicit ViewIndex(size_t n);
+    explicit ViewIndex(const std::vector<size_t> &v);
+    explicit ViewIndex(std::shared_ptr<Index> index);
+    ViewIndex(std::shared_ptr<Index> index,
               const std::vector<long long> &v); // Can contains negative integer.
-    ViewIndex(Index *index, const std::vector<size_t> &v);
+    ViewIndex(std::shared_ptr<Index> index, const std::vector<size_t> &v);
     // Here pos is the pos in current viewindex.
     template <iloc_type T> ViewIndex(const ViewIndex &view, const std::vector<T> &pos);
     // template <typename T> ViewIndex(const ViewIndex &view, const std::vector<T> &pos);
@@ -88,12 +92,12 @@ class ViewIndex {
     std::string iloc_str(long long n) const;
 
     // Modification
-    void set_index(Index *index);
+    void set_index(std::shared_ptr<Index> index);
     size_t _cal_index(long long i) const;
     void reset_index(long long start = 0);
 
-  private:
-    Index *_index;
+private:
+    std::shared_ptr<Index> _index;
     IndexType _key_map;
     // Store discrete integers position.
 
