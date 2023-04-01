@@ -28,9 +28,11 @@ If you remove rows from the original dataframe, then you shouldn't use views cre
 
 - [ ] `DATE` and `DATETIME` data types using `boost.datetime`
 - [ ] `apply`
-- [ ] `string` Index
+- [ ] Key-value Index
 - [ ] Statistical functions
 - [ ] Dump to binary and load
+- [ ] Hierarchical index.
+- [ ] Sort
 
 ## Installation
 
@@ -119,7 +121,13 @@ df.append("g", {"11", "12", "13"});
 
 #### By integer position
 
+```cpp
+DataFrameView df1 = df.iloc({2, 1}, {"d", "a"});
+```
+
 #### By index
+
+
 
 ### Computation
 

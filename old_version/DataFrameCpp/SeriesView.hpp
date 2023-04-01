@@ -15,15 +15,17 @@ class DataFrame;
 // class Series;
 
 class SeriesView {
-  public:
-    SeriesView() {}
+public:
+    SeriesView() {
+    }
 
     explicit SeriesView(Series *series);
     SeriesView(Series *series, const std::vector<size_t> &pos);
     SeriesView(Series *series, const std::vector<long long> &pos);
     SeriesView(const SeriesView *view, const std::vector<size_t> &pos);
     // SeriesView(Series *series, const Index &index);
-    SeriesView(Series *series, std::shared_ptr<Index> &index);
+    SeriesView(Series *series, std::shared_ptr<Index> index);
+    SeriesView(Series *series, std::shared_ptr<ViewIndex> index);
 
     friend Series;
 
@@ -33,7 +35,7 @@ class SeriesView {
     DType dtype() const;
     std::string dtype_name() const;
     bool empty() const;
-    // ViewIndexType index_type() const;
+    ViewIndexType index_type() const;
 
     // Subscript
     template <typename T> const T &iloc_(size_t i) const;
@@ -130,9 +132,8 @@ class SeriesView {
     friend std::ostream &operator<<(std::ostream &os, const SeriesView &dv);
     template <typename T> friend class SeriesViewIterator;
 
-  private:
-    // std::shared_ptr<ViewIndex> _index;
-    std::shared_ptr<Index> _index;
+private:
+    std::shared_ptr<ViewIndex> _index;
     Series *_values;
     // DataFrame *_data;
     // size_t _id;

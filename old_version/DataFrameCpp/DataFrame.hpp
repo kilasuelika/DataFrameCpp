@@ -20,15 +20,15 @@ class DataFrame {
     friend DataFrameView;
 
     // Constructor
-    DataFrame() {}
-    explicit DataFrame(std::initializer_list<Series> columns);
+    DataFrame(){};
+    DataFrame(std::initializer_list<Series> columns);
     // Blank DataFrame.
     DataFrame(const std::vector<std::string> &columns, const std::vector<DType> &types);
 
     DataFrame(const DataFrame &df);
     explicit DataFrame(const DataFrameView &view);
     explicit DataFrame(std::shared_ptr<Index> index);
-    // explicit DataFrame(std::shared_ptr<ViewIndex> index);
+    explicit DataFrame(std::shared_ptr<ViewIndex> index);
 
     // info
     std::vector<DType> dtypes() const;
@@ -123,8 +123,7 @@ class DataFrame {
     void to_csv(const std::string &filename, const CSVIOOptions &options = CSVIOOptions()) const;
 
     std::vector<Series *> _values;
-    // std::shared_ptr<Index> _index = std::make_shared<Index>();
-    std::shared_ptr<Index> _index = std::make_shared<Int64RangeIndex>();
+    std::shared_ptr<Index> _index = std::make_shared<Index>();
 
     ~DataFrame();
 

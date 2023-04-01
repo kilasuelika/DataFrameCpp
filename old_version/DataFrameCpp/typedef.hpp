@@ -46,9 +46,9 @@ enum DType {
     TIMEDURATION
 };
 
-static std::array<std::string, 11> DTypeName{"none",      "string",   "bool",    "int",
-                                             "long long", "float",    "double",  "date",
-                                             "datetime",  "date_dur", "time_dur"};
+static std::array<std::string, 11> DTypeName{"none", "string", "bool", "int",
+                                             "long long", "float", "double", "date",
+                                             "datetime", "date_dur", "time_dur"};
 static std::unordered_map<std::type_index, DType> DTypeMap{
     {std::type_index(typeid(std::monostate)), DType::NONE},
     {std::type_index(typeid(std::string)), DType::STRING},
@@ -67,52 +67,54 @@ template <typename T> struct DType_traits {
     inline static std::string name = DTypeName[dtype];
 };
 
+
 using DataFrameShape = std::array<size_t, 2>;
 
 template <typename T>
-concept iloc_type =
-    requires(T x) {
-        requires std::same_as<T, int> || std::same_as<T, size_t> || std::same_as<T, long long>;
-    };
+concept iloc_type = requires(T x)
+{
+    requires std::same_as<T, int> || std::same_as<T, size_t> || std::same_as<T, long long>;
+};
 
 inline static bool is_arithmetic(int i) { return i > 1 && i < 7; };
 
 template <typename T>
-concept arithmetic_type = requires(T v) {
-                              std::is_same_v<std::remove_cvref_t<T>, bool> ||
-                                  std::is_same_v<std::remove_cvref_t<T>, int> ||
-                                  std::is_same_v<std::remove_cvref_t<T>, long long> ||
-                                  std::is_same_v<std::remove_cvref_t<T>, float> ||
-                                  std::is_same_v<std::remove_cvref_t<T>, double>;
-                          };
+concept arithmetic_type = requires(T v)
+{
+    std::is_same_v<std::remove_cvref_t<T>, bool> || std::is_same_v<std::remove_cvref_t<T>, int> ||
+    std::is_same_v<std::remove_cvref_t<T>, long long> ||
+    std::is_same_v<std::remove_cvref_t<T>, float> ||
+    std::is_same_v<std::remove_cvref_t<T>, double>;
+};
 
 template <typename T>
-concept date_time_type = requires(T v) {
-                             std::is_same_v<std::remove_cvref_t<T>, date> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, ptime> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, date_duration> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, time_duration>;
-                         };
+concept date_time_type = requires(T v)
+{
+    std::is_same_v<std::remove_cvref_t<T>, date> || std::is_same_v<std::remove_cvref_t<T>, ptime> ||
+    std::is_same_v<std::remove_cvref_t<T>, date_duration> ||
+    std::is_same_v<std::remove_cvref_t<T>, time_duration>;
+};
 template <typename T>
-concept supported_type = requires(T v) {
-                             std::is_same_v<std::remove_cvref_t<T>, std::string> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, bool> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, int> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, long long> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, float> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, double> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, date> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, ptime> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, date_duration> ||
-                                 std::is_same_v<std::remove_cvref_t<T>, time_duration>;
-                         };
+concept supported_type = requires(T v)
+{
+    std::is_same_v<std::remove_cvref_t<T>, std::string> ||
+    std::is_same_v<std::remove_cvref_t<T>, bool> ||
+    std::is_same_v<std::remove_cvref_t<T>, int> ||
+    std::is_same_v<std::remove_cvref_t<T>, long long> ||
+    std::is_same_v<std::remove_cvref_t<T>, float> ||
+    std::is_same_v<std::remove_cvref_t<T>, double> ||
+    std::is_same_v<std::remove_cvref_t<T>, date> ||
+    std::is_same_v<std::remove_cvref_t<T>, ptime> ||
+    std::is_same_v<std::remove_cvref_t<T>, date_duration> ||
+    std::is_same_v<std::remove_cvref_t<T>, time_duration>;
+};
 
 // static std::unordered_map<std::type_index, std::unordered_map<std::type_index, DType>>{
 // };
 using SeriesType =
-    std::variant<std::monostate, std::vector<std::string>, std::vector<bool>, std::vector<int>,
-                 std::vector<long long>, std::vector<float>, std::vector<double>, std::vector<date>,
-                 std::vector<ptime>, std::vector<date_duration>, std::vector<time_duration>>;
+std::variant<std::monostate, std::vector<std::string>, std::vector<bool>, std::vector<int>,
+             std::vector<long long>, std::vector<float>, std::vector<double>, std::vector<date>,
+             std::vector<ptime>, std::vector<date_duration>, std::vector<time_duration>>;
 
 // using SeriesViewType =
 //     std::variant<std::monostate, std::span<std::string>, std::span<bool>, std::span<int>,
@@ -122,14 +124,14 @@ using SeriesType =
 // TRIVALINDEX: store a start integer start.
 // INTINDEX: int as key.
 // STRINGINDEX: string as key.
-enum class IndexDType { Positional = 0, Int64Range, STRINGINDEX };
+enum IndexDType { TRIVALINDEX = 0, INTINDEX, STRINGINDEX };
 
 static std::array<std::string, 3> IndexDTypeName{"trival", "int", "string"};
 // A key can be mapped to multiple rows.
-// using IndexType = std::variant<long long, std::unordered_map<int, std::vector<size_t>>,
-//                               std::unordered_map<std::string, std::vector<size_t>>>;
+using IndexType = std::variant<long long, std::unordered_map<int, std::vector<size_t>>,
+                               std::unordered_map<std::string, std::vector<size_t>>>;
 
-// enum ViewIndexType { RANGE = 0, SLICE, POS };
+enum ViewIndexType { RANGE = 0, SLICE, POS };
 
 struct Slice {
     long long start = 0, step = 1, end = -1;
@@ -168,5 +170,5 @@ struct CSVIOOptions {
 }; // namespace dfc
 
 namespace fmt {
-template <typename... Args> void cerr(Args... args) { print(fg(color::red), args...); }
+template <typename... Args> void cerr(Args ... args) { print(fg(color::red), args...); }
 } // namespace fmt

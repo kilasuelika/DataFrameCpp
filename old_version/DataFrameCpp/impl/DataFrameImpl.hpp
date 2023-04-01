@@ -136,10 +136,7 @@ inline void DataFrame::append_row() {
     _index->push_back();
 }
 
-inline DataFrame::DataFrame(std::initializer_list<Series> columns) {
-    append_cols(std::move(columns));
-    _index = std::make_shared<Int64RangeIndex>(_values[0]->size());
-}
+inline DataFrame::DataFrame(std::initializer_list<Series> columns) { append_cols(columns); }
 
 inline DataFrame::DataFrame(const std::vector<std::string> &columns,
                             const std::vector<DType> &types) {
@@ -163,7 +160,7 @@ inline dfc::DataFrame::DataFrame(const DataFrame &df)
 }
 
 inline dfc::DataFrame::DataFrame(const DataFrameView &view)
-    : _shape(view._shape), _index(view._index->clone()) {
+    : _shape(view._shape), _index(std::make_shared<Index>(*(view._index))) {
 
     // Copy data
     for (int i = 0; i < view._values.size(); ++i) {
@@ -177,12 +174,12 @@ inline dfc::DataFrame::DataFrame(const DataFrameView &view)
     }
 }
 
-inline dfc::DataFrame::DataFrame(std::shared_ptr<Index> index) : _index(index->clone()) {}
+inline dfc::DataFrame::DataFrame(std::shared_ptr<Index> index) : _index(index) {}
 
-// inline dfc::DataFrame::DataFrame(std::shared_ptr<ViewIndex> index)
-//     : _index(std::make_shared<Index>(*index)), _shape({index->size(), 0}) {
-//     std::cout << "DataFrame: " << _index->size() << std::endl;
-// }
+inline dfc::DataFrame::DataFrame(std::shared_ptr<ViewIndex> index)
+    : _index(std::make_shared<Index>(*index)), _shape({index->size(), 0}) {
+    std::cout << "DataFrame: " << _index->size() << std::endl;
+}
 
 inline std::vector<dfc::DType> dfc::DataFrame::dtypes() const {
     std::vector<DType> res(_shape[1]);
@@ -355,7 +352,7 @@ template <typename T> inline T DataFrame::to_eigen(const std::vector<std::string
             throw(std::runtime_error(info));                                                       \
             return DataFrame();                                                                    \
         } else {                                                                                   \
-            DataFrame df(lhs._index->clone());                                                     \
+            DataFrame df(lhs._index);                                                              \
             for (int i = 0; i < lhs._shape[1]; ++i) {                                              \
                 df.append_col(std::move(*(lhs._values[i])op *(rhs._values[i])));                   \
             }                                                                                      \

@@ -24,7 +24,7 @@ class DataFrameView {
     template <iloc_type T1, iloc_type T2>
     DataFrameView(const DataFrameView &view, const std::vector<T1> &rows,
                   const std::vector<T2> &cols);
-    explicit DataFrameView(std::shared_ptr<Index> index);
+    explicit DataFrameView(std::shared_ptr<ViewIndex> index);
     // info
     std::vector<DType> dtypes() const;
     DataFrameShape shape() const;
@@ -108,7 +108,7 @@ class DataFrameView {
   private:
     void _init_by_cols(const DataFrame &dataframe, const std::vector<std::string> &cols);
     // DataFrame *_values;
-    std::shared_ptr<Index> _index;
+    std::shared_ptr<ViewIndex> _index;
     std::vector<SeriesView *> _values;
 
     DataFrameShape _shape{0, 0};

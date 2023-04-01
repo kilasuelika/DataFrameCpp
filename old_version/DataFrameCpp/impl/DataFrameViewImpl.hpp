@@ -7,7 +7,8 @@
 namespace dfc {
 
 inline dfc::DataFrameView::DataFrameView(const DataFrame &dataframe)
-    : _index(dataframe._index), _shape(dataframe.shape()), _column_map(dataframe._column_map) {
+    : _index(std::make_shared<ViewIndex>(dataframe._index)), _shape(dataframe.shape()),
+      _column_map(dataframe._column_map) {
     fmt::print("New dfv: shape {} {}\n", _shape[0], _shape[1]);
     for (size_t i = 0; i < dataframe.shape()[1]; ++i) {
         _values.push_back(new SeriesView(dataframe._values[i], _index));
@@ -16,7 +17,7 @@ inline dfc::DataFrameView::DataFrameView(const DataFrame &dataframe)
 
 inline DataFrameView::DataFrameView(const DataFrame &dataframe,
                                     const std::vector<std::string> &cols)
-    : _index(dataframe._index) {
+    : _index(std::make_shared<ViewIndex>(dataframe._index)) {
     _init_by_cols(dataframe, cols);
 }
 
@@ -37,7 +38,7 @@ inline void dfc::DataFrameView::_init_by_cols(const DataFrame &dataframe,
 
 inline DataFrameView::DataFrameView(const DataFrame &dataframe, const std::vector<long long> &rows,
                                     const std::vector<std::string> &cols)
-    : _index(std::make_shared<Index>(dataframe._index, rows)) {
+    : _index(std::make_shared<ViewIndex>(dataframe._index, rows)) {
     // Conpute row index.
     _shape[0] = rows.size();
 
@@ -50,7 +51,7 @@ inline DataFrameView::DataFrameView(const DataFrame &dataframe, const std::vecto
         if (it.first != it.second) {
             for (auto sit = it.first; sit != it.second; ++sit) {
                 _column_map.insert(std::pair{col, i});
-                _values.push_back(new SeriesView(dataframe._values[sit->second], _index));
+                _values.push_back(new SeriesView(dataframe._values[sit->second], _rows));
                 ++i;
             }
         } else {
@@ -67,7 +68,8 @@ inline DataFrameView::DataFrameView(const DataFrame &dataframe, const std::vecto
 inline dfc::DataFrameView::DataFrameView(const DataFrame &dataframe,
                                          const std::vector<long long> &rows,
                                          const std::vector<long long> &cols)
-    : _index(std::make_shared<Index>(dataframe._index, rows)), _shape({rows.size(), cols.size()}) {
+    : _index(std::make_shared<ViewIndex>(dataframe._index, rows)),
+      _shape({rows.size(), cols.size()}) {
     auto &_rows = _index->_pos;
 
     std::set<size_t> s;
@@ -103,7 +105,7 @@ inline DataFrameView::DataFrameView(const DataFrameView &view, const std::vector
     }
 }
 
-inline dfc::DataFrameView::DataFrameView(std::shared_ptr<Index> index) : _index(index) {}
+inline dfc::DataFrameView::DataFrameView(std::shared_ptr<ViewIndex> index) : _index(index) {}
 
 inline std::vector<dfc::DType> dfc::DataFrameView::dtypes() const {
     std::vector<DType> res(_shape[1]);
@@ -224,7 +226,7 @@ inline std::ostream &dfc::operator<<(std::ostream &os, const DataFrameView &dv) 
     // Shape
     os << std::format("Base index: {} ({})", dv._index->name(), dv._index->dtype_name())
        << std::endl;
-    // os << std::format("View index : {}", dv._index->name(), dv._index->type_name()) << std::endl;
+    os << std::format("View index : {}", dv._index->name(), dv._index->type_name()) << std::endl;
     os << std::format("Shape: ({}, {})", dv._shape[0], dv._shape[1]) << std::flush;
     return os;
 }

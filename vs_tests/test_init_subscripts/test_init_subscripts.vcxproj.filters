@@ -98,5 +98,13 @@
     <Filter Include="include\DataFrameCpp\macro">
       <UniqueIdentifier>{ffe11c49-e1b0-4728-9bfe-092cd000a491}</UniqueIdentifier>
     </Filter>
+    <Filter Include="doc">
+      <UniqueIdentifier>{25e7cc9a-5cf4-4a81-9aeb-57291ec8f789}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Filter>doc</Filter>
+    </None>
   </ItemGroup>
 </Project>
