@@ -203,14 +203,14 @@ DataFrameCpp_SERIES_OR_VIEW_BINOP_ASSIGNMENT_IMPL_(SeriesView, Series, /=, div);
     }
 
 #define DataFrameCpp_SeriesView_SeriesView_Compare_Case_level2(ltype, dtypename, type, op)         \
-    case dtypename: {                                                                              \
+    case DType::dtypename: {                                                                       \
         _Pragma("omp parallel for") for (int i = 0; i < lhs.size(); ++i) {                         \
             res_v[i] = lhs.iloc_<type>(i) op rhs.iloc_<type>(i);                                   \
         }                                                                                          \
         break;                                                                                     \
     }
 #define DataFrameCpp_SeriesView_SeriesView_Compare_Case_level1(dtypename, type, op)                \
-    case dtypename: {                                                                              \
+    case DType::dtypename: {                                                                       \
         switch (rhs.dtype()) {                                                                     \
             DataFrameCpp_SeriesView_SeriesView_Compare_Case_level2(type, BOOL, bool, op);          \
             DataFrameCpp_SeriesView_SeriesView_Compare_Case_level2(type, INT, int, op);            \

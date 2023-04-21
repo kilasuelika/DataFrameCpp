@@ -253,7 +253,7 @@ inline void DataFrameView::to_csv(const std::string &filename, const CSVIOOption
             if (_values[j]) {
                 auto s = _values[j]->iloc_str_(i);
                 switch (ts[j]) {
-                case DOUBLE: {
+                case DType::DOUBLE: {
                     if (s == nan_str) {
                         file << "";
                     } else {

@@ -27,7 +27,7 @@ template <typename T> class SeriesIterator;
 
 // A Series doesn't have index and can only be subscripted by number.
 class Series {
-public:
+  public:
     // Constructor
     // mono-state
     explicit Series(size_t n);
@@ -35,7 +35,6 @@ public:
     template <typename T> explicit Series(std::vector<T> &&data);
     template <typename T> Series(const std::string &name, std::vector<T> data);
     template <typename T> Series(const std::string &name, std::vector<T> &&data);
-
 
     // Blank column
     // template <typename T>
@@ -52,8 +51,7 @@ public:
     // Assignment
     Series &operator=(const Series &A);
 
-    Series() {
-    }; // Default constructor, do nothing.
+    Series() {} // Default constructor, do nothing.
 
     // info
     const std::string &name() const;
@@ -82,6 +80,8 @@ public:
 
     // Conversion
     template <typename T> void astype();
+    bool is_numeric_dtype() const { return is_arithmetic(dtype()); }
+    bool is_string_dtype() const { return dtype() == DType::STRING; }
 
     // Modification
     template <typename T> void reserve(size_t sz);
@@ -166,20 +166,13 @@ public:
     friend Series operator||(const SeriesView &lhs, const Series &rhs);
 
     template <supported_type S> friend Series operator>(const Series &lhs, const S &rhs);
-    template <supported_type S>
-    friend Series operator<(const Series &lhs, const S &rhs);
-    template <supported_type S>
-    friend Series operator>=(const Series &lhs, const S &rhs);
-    template <supported_type S>
-    friend Series operator<=(const Series &lhs, const S &rhs);
-    template <supported_type S>
-    friend Series operator==(const Series &lhs, const S &rhs);
-    template <supported_type S>
-    friend Series operator!=(const Series &lhs, const S &rhs);
-    template <supported_type S>
-    friend Series operator&&(const Series &lhs, const S &rhs);
-    template <supported_type S>
-    friend Series operator||(const Series &lhs, const S &rhs);
+    template <supported_type S> friend Series operator<(const Series &lhs, const S &rhs);
+    template <supported_type S> friend Series operator>=(const Series &lhs, const S &rhs);
+    template <supported_type S> friend Series operator<=(const Series &lhs, const S &rhs);
+    template <supported_type S> friend Series operator==(const Series &lhs, const S &rhs);
+    template <supported_type S> friend Series operator!=(const Series &lhs, const S &rhs);
+    template <supported_type S> friend Series operator&&(const Series &lhs, const S &rhs);
+    template <supported_type S> friend Series operator||(const Series &lhs, const S &rhs);
 
     template <supported_type S> friend Series operator>(const S &rhs, const Series &lhs);
     template <supported_type S> friend Series operator<(const S &rhs, const Series &lhs);
@@ -190,18 +183,22 @@ public:
     template <supported_type S> friend Series operator&&(const S &rhs, const Series &lhs);
     template <supported_type S> friend Series operator||(const S &rhs, const Series &lhs);
 
+    template <bool inplace = false, supported_functor_type Func = std::function<double(double)>>
+    auto apply(Func f);
+    template <bool inplace = false, template <typename> typename TemplateFunc,
+              supported_type_pack... TargetArgumentTypes>
+    auto apply();
+
     SeriesType _values;
 
     friend class SeriesView;
 
-private:
+  private:
     std::string _name;
     size_t _size;
 
     size_t _cal_index(long long i) const;
     std::vector<size_t> _cal_index(const std::vector<long long> &i) const;
-
-
 };
 
 // template <typename T> struct SeriesIterator {

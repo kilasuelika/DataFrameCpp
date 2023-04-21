@@ -32,6 +32,7 @@ class DataFrame {
 
     // info
     std::vector<DType> dtypes() const;
+    std::string dtype_name(int i) const { return _values[i]->dtype_name(); }
     const DataFrameShape &shape() const;
     bool empty() const;
     DataFrameView head(int n = 5) const;
@@ -67,6 +68,9 @@ class DataFrame {
 
     // Insert a new blank row.
     void append_row();
+
+    // Index
+    template <bool inplace = false> decltype(auto) set_index(const std::string &name);
 
     // Arithmetic
     friend inline DataFrame operator+(const DataFrame &lhs, const DataFrame &rhs);
@@ -110,6 +114,9 @@ class DataFrame {
 
     // conversion
     DataFrame copy() const;
+
+    bool all_numeric_dtype() const;
+
     // All numeric columns to an eigen type.
     template <typename T> T to_eigen() const;
     // Specific columns.
@@ -122,11 +129,27 @@ class DataFrame {
     friend std::ostream &operator<<(std::ostream &os, const DataFrame &dt);
     void to_csv(const std::string &filename, const CSVIOOptions &options = CSVIOOptions()) const;
 
+    template <bool inplace = false, supported_functor_type Func = std::function<double(double)>>
+    decltype(auto) apply(Func f);
+    template <bool inplace, template <typename> typename TemplateFunc,
+              supported_type_pack... TargetArgumentTypes>
+    decltype(auto) apply();
+
+    // Implemented in math.hpp
+#define DataFrameCpp_DataFrame_Unary_Math_Function_Declaration(name)                               \
+    template <bool inplace = false> auto name()
+
+    DataFrameCpp_DataFrame_Unary_Math_Function_Declaration(sin);
+    DataFrameCpp_DataFrame_Unary_Math_Function_Declaration(cos);
+    DataFrameCpp_DataFrame_Unary_Math_Function_Declaration(tan);
+
+#undef DataFrameCpp_Unary_Math_Function_Declaration
+
+    ~DataFrame();
+
     std::vector<Series *> _values;
     // std::shared_ptr<Index> _index = std::make_shared<Index>();
     std::shared_ptr<Index> _index = std::make_shared<Int64RangeIndex>();
-
-    ~DataFrame();
 
   private:
     DataFrameShape _shape{0, 0};

@@ -26,13 +26,13 @@ If you remove rows from the original dataframe, then you shouldn't use views cre
 
 ## Task
 
-- [ ] `DATE` and `DATETIME` data types using `boost.datetime`
 - [ ] `apply`
+- [ ] Sort
 - [ ] Key-value Index
-- [ ] Statistical functions
+- [ ] Statistical and math functions
 - [ ] Dump to binary and load
 - [ ] Hierarchical index.
-- [ ] Sort
+- [ ] `DATE` and `DATETIME` data types using `boost.datetime`
 
 ## Installation
 
@@ -130,6 +130,41 @@ DataFrameView df1 = df.iloc({2, 1}, {"d", "a"});
 
 
 ### Computation
+
+#### Math functions
+
+#### Apply
+
+##### Pass a concrete unary function
+
+When you pass a concrete unary function, only columns have the same data type will be applied by the function and other columns won't change.
+```cpp
+dfc::DataFrame df{{"a", {1.0, 2.0, 9.0, 8.0}}, {"b", {6, 7, 8, 9}}};
+
+std::function<double(double)> double_plus_1_functor = [](double x) { return x + 1; };
+df.apply<true>(double_plus_1_functor); // values of column a changed and b no change.
+
+auto double_to_int_functor = [](double x) { return int(x); };
+df.apply<true>(double_to_int_functor); // Now a is a int column.
+
+df.apply<true>([](int x) { return x + 2; }); // pass lambda directly.
+```
+
+##### Pass a template functor with unique return type
+
+Consider a `to_string()` that can accept multiple type inputs and a known unique return type. Here you must pass a template functor as a template argument. You can specify a list of target argument types.
+
+```cpp
+template <typename T> struct to_string_functor {
+    std::string operator()(T x) { return std::to_string(x); }
+};
+
+dfc::DataFrame df{{"a", {1.0, 2.0, 9.0, 8.0}}, {"b", {6, 7, 8, 9}}, {"c", "a", "bc", "d", "e"}};
+df.apply<true, to_string_functor, double, int>();   //You only want to convert double and int columns to string.
+```
+
+#### Group processing
+
 
 
 ## Reference

@@ -7,6 +7,7 @@
 #include "../DataFrameView.hpp"
 // #include <fmt/format.h>
 #include <iomanip>
+#include "../math.hpp"
 
 namespace dfc {
 inline std::string DataFrame::_find_valid_column_name(const std::string &name) {
@@ -136,6 +137,8 @@ inline void DataFrame::append_row() {
     _index->push_back();
 }
 
+template <bool inplace> inline decltype(auto) dfc::DataFrame::set_index(const std::string &name) {}
+
 inline DataFrame::DataFrame(std::initializer_list<Series> columns) {
     append_cols(std::move(columns));
     _index = std::make_shared<Int64RangeIndex>(_values[0]->size());
@@ -238,7 +241,7 @@ inline DataFrameView DataFrame::operator[](const std::string &col) const {
 inline DataFrameView DataFrame::operator[](const DataFrame &df) const {
     auto &col = df._values[0];
     switch (col->dtype()) {
-    case BOOL: {
+    case DType::BOOL: {
         auto &v = col->vector<bool>();
         std::vector<long long> rows = where<long long>(v), cols(_shape[1]);
         std::iota(cols.begin(), cols.end(), 0);
@@ -293,11 +296,49 @@ inline void DataFrame::to_csv(const std::string &filename, const CSVIOOptions &o
     DataFrameView(*this).to_csv(filename, options);
 }
 
+template <bool inplace, supported_functor_type Func> decltype(auto) dfc::DataFrame::apply(Func f) {
+    if constexpr (inplace) {
+        for (auto s : _values) {
+            s->apply<true, Func>(f);
+        }
+        DataFrame &res = *this;
+        return res;
+    } else {
+        DataFrame res(*this);
+        res.apply<true, Func>(f);
+        return res;
+    }
+}
+
+template <bool inplace, template <typename> typename TemplateFunc,
+          supported_type_pack... TargetArgumentTypes>
+decltype(auto) DataFrame::apply() {
+    if constexpr (inplace) {
+        for (auto s : _values) {
+            s->apply<true, TemplateFunc, TargetArgumentTypes...>();
+        }
+        DataFrame &res = *this;
+        return res;
+    } else {
+        DataFrame res(*this);
+        res.apply<true, TemplateFunc, TargetArgumentTypes...>();
+        return res;
+    }
+};
+
 inline const std::vector<Series *> &DataFrame::values() const { return _values; }
 
 inline DataFrame dfc::DataFrame::copy() const {
     DataFrame res;
     return res;
+}
+
+inline bool dfc::DataFrame::all_numeric_dtype() const {
+    for (const auto &c : _values) {
+        if (!c->is_numeric_dtype())
+            return false;
+    }
+    return true;
 }
 
 template <typename T> T inline dfc::DataFrame::to_eigen() const { return to_eigen<T>(columns()); }

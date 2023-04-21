@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{8fba7aca-ba65-4ac4-9d87-93ce27ea95e8}</ProjectGuid>
-    <RootNamespace>testinitsubscripts</RootNamespace>
+    <ProjectGuid>{3d92c520-13a2-4f17-837d-0c84e81ca79f}</ProjectGuid>
+    <RootNamespace>vstests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -120,6 +120,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions> /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -128,6 +129,14 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\test\test_apply.cpp" />
+    <ClCompile Include="..\..\test\test_DataFrame.cpp" />
+    <ClCompile Include="..\..\test\test_DataFrameView.cpp" />
+    <ClCompile Include="..\..\test\test_index.cpp" />
+    <ClCompile Include="..\..\test\test_Series.cpp" />
+    <ClCompile Include="vs_tests.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\DataFrameCpp\DataFrame.hpp" />
     <ClInclude Include="..\..\include\DataFrameCpp\DataFrameCpp.hpp" />
@@ -142,19 +151,11 @@
     <ClInclude Include="..\..\include\DataFrameCpp\impl\UndefMacro.hpp" />
     <ClInclude Include="..\..\include\DataFrameCpp\Index.hpp" />
     <ClInclude Include="..\..\include\DataFrameCpp\IO.hpp" />
-    <ClInclude Include="..\..\include\DataFrameCpp\macro\dataframe_dataframeview_op.h" />
-    <ClInclude Include="..\..\include\DataFrameCpp\macro\undef_dataframe_dataframeview_op.h" />
     <ClInclude Include="..\..\include\DataFrameCpp\math.hpp" />
     <ClInclude Include="..\..\include\DataFrameCpp\Series.hpp" />
     <ClInclude Include="..\..\include\DataFrameCpp\SeriesView.hpp" />
     <ClInclude Include="..\..\include\DataFrameCpp\typedef.hpp" />
     <ClInclude Include="..\..\include\DataFrameCpp\util.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\test\test_DataFrame.cpp" />
-    <ClCompile Include="..\..\test\test_DataFrameView.cpp" />
-    <ClCompile Include="..\..\test\test_Series.cpp" />
-    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />

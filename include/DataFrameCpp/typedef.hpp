@@ -23,6 +23,12 @@
 #endif
 #include "util.hpp"
 
+#include <boost/mpl/at.hpp>
+#include <boost/function_types/parameter_types.hpp>
+#include <boost/function_types/result_type.hpp>
+
+#include <boost/hana.hpp>
+
 #define UNWRAP(...) __VA_ARGS__
 
 namespace dfc {
@@ -32,7 +38,7 @@ using boost::posix_time::ptime;
 using boost::posix_time::time_duration;
 
 // Data type.
-enum DType {
+enum class DType {
     NONE = 0,
     STRING,
     BOOL,
@@ -64,7 +70,7 @@ static std::unordered_map<std::type_index, DType> DTypeMap{
 
 template <typename T> struct DType_traits {
     inline static DType dtype = DTypeMap[std::type_index(typeid(T))];
-    inline static std::string name = DTypeName[dtype];
+    inline static std::string name = DTypeName[static_cast<int>(dtype)];
 };
 
 using DataFrameShape = std::array<size_t, 2>;
@@ -75,7 +81,8 @@ concept iloc_type =
         requires std::same_as<T, int> || std::same_as<T, size_t> || std::same_as<T, long long>;
     };
 
-inline static bool is_arithmetic(int i) { return i > 1 && i < 7; };
+inline static bool is_arithmetic(int i) { return i > 1 && i < 7; }
+inline static bool is_arithmetic(DType i) { return is_arithmetic(static_cast<int>(i)); }
 
 template <typename T>
 concept arithmetic_type = requires(T v) {
@@ -106,6 +113,21 @@ concept supported_type = requires(T v) {
                                  std::is_same_v<std::remove_cvref_t<T>, date_duration> ||
                                  std::is_same_v<std::remove_cvref_t<T>, time_duration>;
                          };
+template <typename... Ts>
+concept supported_type_pack = (supported_type<Ts> && ...);
+
+// Functor type.
+template <typename Functor> struct FunctorType {
+    using raw_arg_type = typename boost::mpl::at<
+        typename boost::function_types::parameter_types<decltype(&Functor::operator())>::type,
+        boost::mpl::int_<1>>::type;
+    using arg_type = std::remove_reference_t<raw_arg_type>;
+    using ret_type =
+        typename boost::function_types::result_type<decltype(&Functor::operator())>::type;
+};
+template <typename Functor>
+concept supported_functor_type = supported_type<typename FunctorType<Functor>::arg_type> ||
+                                 supported_type<typename FunctorType<Functor>::ret_type>;
 
 // static std::unordered_map<std::type_index, std::unordered_map<std::type_index, DType>>{
 // };
@@ -122,7 +144,7 @@ using SeriesType =
 // TRIVALINDEX: store a start integer start.
 // INTINDEX: int as key.
 // STRINGINDEX: string as key.
-enum class IndexDType { Positional = 0, Int64Range, STRINGINDEX };
+enum class IndexDType { Positional = 0, Int64Range, Int64, STRINGINDEX };
 
 static std::array<std::string, 3> IndexDTypeName{"trival", "int", "string"};
 // A key can be mapped to multiple rows.
