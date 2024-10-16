@@ -3,11 +3,12 @@
 // @kilasuelika
 // May 21, 2022
 
-#include "../DataFrame.hpp"
+#include "../DataFrame.hpp" n
 #include "../DataFrameView.hpp"
 // #include <fmt/format.h>
 #include <iomanip>
 #include "../math.hpp"
+#include <unordered_set>
 
 namespace dfc {
 inline std::string DataFrame::_find_valid_column_name(const std::string &name) {
@@ -129,6 +130,47 @@ inline void DataFrame::append_cols(std::vector<Series> &&columns) {
     _index->resize(_shape[0]);
 }
 
+template <bool inplace = false> decltype(auto) DataFrame::drop(const std::string &name) {
+    auto it = _column_map.equal_range(name);
+    int k = 0;
+    for (auto sit = it.first; sit != it.second; ++sit) {
+    }
+}
+
+template <bool inplace> inline decltype(auto) DataFrame::drop(int col_id) {
+    if constexpr (inplace) {
+        int target_id = std::numeric_limits<int>::max();
+        if (-_shape[1] <= col_id && col_id < 0) {
+            target_id = _shape[1] + col_id;
+        } else if (col_id < _shape[1]) {
+            target_id = col_id;
+        }
+        if (target_id != std::numeric_limits<int>::max) {
+            _values.erase(_values.begin() + target_id);
+            erase_map_by_value(_column_map, col_id, 1);
+            --_shape[0];
+        }
+    } else {
+        DataFrame _new = *this;
+        _new.drop<true>(col_id);
+        return _new;
+    }
+}
+
+template <bool inplace> inline decltype(auto) DataFrame::drop(const std::vector<int> &col_ids) {
+    if constexpr (inplace) {
+        auto _col_ids = convert_index(col_ids, _shape[1]);
+        auto dropped_ = erase_vec_by_ids(_values, _col_ids);
+        erase_map_by_value<std::multimap<std::string, size_t>, std::unordered_set>(
+            _column_map, std::unordered_set<size_t>(dropped_.begin(), dropped_.end()));
+        _shape[1] -= dropped_.size();
+    } else {
+        DataFrame res = *this;
+        res.drop<true>(col_ids);
+        return res;
+    }
+}
+
 inline void DataFrame::append_row() {
     for (auto &c : _values) {
         c->push_back();
@@ -137,7 +179,16 @@ inline void DataFrame::append_row() {
     _index->push_back();
 }
 
-template <bool inplace> inline decltype(auto) dfc::DataFrame::set_index(const std::string &name) {}
+template <bool inplace> inline decltype(auto) dfc::DataFrame::set_index(const std::string &name) {
+    if constexpr (inplace) {
+
+        if (contains_unique(name)) {
+            _index = create_index(_values[get_unique_in_multimap(_column_map, name)]);
+        }
+        return;
+    } else {
+    }
+}
 
 inline DataFrame::DataFrame(std::initializer_list<Series> columns) {
     append_cols(std::move(columns));

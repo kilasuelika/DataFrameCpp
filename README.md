@@ -122,12 +122,16 @@ df.append("g", {"11", "12", "13"});
 #### By integer position
 
 ```cpp
-DataFrameView df1 = df.iloc({2, 1}, {"d", "a"});
+DataFrameView df1 = df.iloc({2, 1}, {"d", "a"});  //column d and a, row 2 and 1.
 ```
 
 #### By index
 
+```cpp
+DataFrameView 2=df.set_index("b");
 
+df.loc({8, 9}, {"d","a"});
+```
 
 ### Computation
 
@@ -181,6 +185,11 @@ Use a `Series` to store keys and use `unordered_map` to store key-index map. The
 
 If the key map is long long, then the value is the start of indexing.
 
+Type of indices:
+
+1. `template <typename KeyType> class KeyValueIndex`: key-value type index. Multiple rows can associated with a single key.
+2. `template <typename KeyType> class UniqueKeyValueIndex`: Unique version key-value type index. An exception will be generated when there are multiple rows for a single key.
+1. 
 #### DataFrame
 
 Consists of `Index` and multiple `Series`.

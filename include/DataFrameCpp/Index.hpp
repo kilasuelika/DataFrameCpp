@@ -1,5 +1,8 @@
 #pragma once
-
+/**
+ *@file
+ *
+ */
 #include "Series.hpp"
 
 namespace dfc {
@@ -15,6 +18,7 @@ class DataFrameView;
 class Index {
   public:
     Index() { set_info_(); }
+    // explicit Index(std::shared_ptr<Series> &values) : _values(values) {}
     explicit Index(size_t sz) : _size(sz) { set_info_(); }
     explicit Index(const std::vector<size_t> &pos_) : _pos(pos_) {}
     Index(const std::shared_ptr<Index> &index, const std::vector<long long> &pos_)
@@ -67,7 +71,7 @@ class Index {
     std::shared_ptr<Series> _values;
     size_t _size = 0;
 
-    std::vector<size_t> _pos; // position in _values.
+    std::vector<size_t> _pos; ///< map indices in current dataframe to indices in _values.
 
     IndexDType _dtype = IndexDType::Positional;
     std::string _dtype_name = "Positional";
@@ -110,16 +114,16 @@ class Int64PeriodIndex : public Index {
     long long _start = 0, _diff = 0, _end = 0; // end_is the value of last index +_diff
 };
 
-template <typename T> class KeyValueIndex : public Index {
+template <typename KeyType> class KeyValueIndex : public Index {
   public:
-    std::vector<size_t> loc(const T &key) const override {
+    std::vector<size_t> loc(const KeyType &key) const override {
         if (auto it = _kv.find(key); it != _kv.end()) {
             return it->second;
         } else {
             return {};
         }
     }
-    std::vector<size_t> loc(const std::vector<T> &keys) const override {
+    std::vector<size_t> loc(const std::vector<KeyType> &keys) const override {
         std::vector<size_t> res;
         for (const auto &key : keys) {
             if (auto it = _kv.find(key); it != _kv.end()) {
@@ -130,7 +134,7 @@ template <typename T> class KeyValueIndex : public Index {
     }
 
   protected:
-    std::unordered_map<T, std::vector<size_t>> _kv;
+    std::unordered_map<KeyType, std::vector<size_t>> _kv;
 
     void set_info_() override;
 };
@@ -141,5 +145,12 @@ template <> inline void KeyValueIndex<long long>::set_info_() {
     _dtype = IndexDType::Int64;
     _dtype_name = "Int64";
 }
+
+/**
+ * \brief Convert a series to a index.
+ * \param a
+ * \return a
+ */
+Index create_index(Series *values) {}
 
 }; // namespace dfc

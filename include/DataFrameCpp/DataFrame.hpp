@@ -39,6 +39,19 @@ class DataFrame {
     void describe() const; // print column name and type.
 
     std::vector<std::string> columns() const;
+    /// Check if there are columns with specified name.
+    bool contains(const std::string &colname) const { return _column_map.contains(colname); }
+    /**
+     * \brief Check if a column is unique in dataframe.
+     * \param a
+     * \return a
+     */
+    bool contains_unique(const std::string &colname) const;
+    /**
+     * \brief Rename columns.
+     * \param map Old name to new name map.
+     */
+    void rename(const std::map<std::string, std::string> &map);
 
     // Subscripts.
     // SeriesView operator[](const std::string &col);
@@ -65,6 +78,24 @@ class DataFrame {
     void append_col(Series &&column);
     void append_col(const std::string &name, Series column);
     void append_cols(std::vector<Series> &&columns);
+
+    /**
+     * \brief Remove a column.
+     * \param a
+     */
+    template <bool inplace = false> decltype(auto) drop(const std::string &name);
+    template <bool inplace = false> decltype(auto) drop(const std::vector<std::string> &names);
+
+    /**
+     * \brief Drop a column by integer index.
+     * \param col_id Column index to be removed, can be negative.
+     */
+    template <bool inplace = false> decltype(auto) drop(int col_id);
+    /**
+     * \brief Drop multiple columns.
+     * \param a
+     */
+    template <bool inplace = false> decltype(auto) drop(const std::vector<int> &col_ids);
 
     // Insert a new blank row.
     void append_row();
@@ -153,8 +184,8 @@ class DataFrame {
 
   private:
     DataFrameShape _shape{0, 0};
+    // std::unordered_map<std::string, std::vector<size_t>> _column_map;
     std::multimap<std::string, size_t> _column_map;
-
     std::string _find_valid_column_name(const std::string &name);
     // void _init_by_columns(std::vector<Series> &&columns);
 };
