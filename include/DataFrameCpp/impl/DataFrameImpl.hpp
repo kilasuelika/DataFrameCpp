@@ -130,14 +130,14 @@ namespace dfc {
         _index->resize(_shape[0]);
     }
 
-    template <bool inplace = false> decltype(auto) DataFrame::drop(const std::string& name) {
+    template <bool inplace = false> decltype(auto) DataFrame::remove_col(const std::string& name) {
         auto it = _column_map.equal_range(name);
         int k = 0;
         for (auto sit = it.first; sit != it.second; ++sit) {
         }
     }
 
-    template <bool inplace> inline decltype(auto) DataFrame::drop(int col_id) {
+    template <bool inplace> inline decltype(auto) DataFrame::remove_col(int col_id) {
         if constexpr (inplace) {
             int target_id = std::numeric_limits<int>::max();
             if (-_shape[1] <= col_id && col_id < 0) {
@@ -146,7 +146,7 @@ namespace dfc {
             else if (col_id < _shape[1]) {
                 target_id = col_id;
             }
-            if (target_id != std::numeric_limits<int>::max) {
+            if (target_id != std::numeric_limits<int>::max()) {
                 _values.erase(_values.begin() + target_id);
                 erase_map_by_value(_column_map, col_id, 1);
                 --_shape[0];
@@ -154,12 +154,12 @@ namespace dfc {
         }
         else {
             DataFrame _new = *this;
-            _new.drop<true>(col_id);
+            _new.remove_col<true>(col_id);
             return _new;
         }
     }
 
-    template <bool inplace> inline decltype(auto) DataFrame::drop(const std::vector<int>& col_ids) {
+    template <bool inplace> inline decltype(auto) DataFrame::remove_cols(const std::vector<int>& col_ids) {
         if constexpr (inplace) {
             auto _col_ids = convert_index(col_ids, _shape[1]);
             auto dropped_ = erase_vec_by_ids(_values, _col_ids);
@@ -169,17 +169,18 @@ namespace dfc {
         }
         else {
             DataFrame res = *this;
-            res.drop<true>(col_ids);
+            res.remove_cols<true>(col_ids);
             return res;
         }
     }
 
-    inline void DataFrame::append_row() {
+    inline DataFrameView DataFrame::append_row() {
         for (auto& c : _values) {
             c->push_back();
         }
         ++_shape[0];
         _index->push_back();
+        return DataFrameView(*this, { static_cast<long long>(_shape[0] - 1) }, columns());
     }
 
     template <bool inplace> inline decltype(auto) dfc::DataFrame::set_index(const std::string& name) {

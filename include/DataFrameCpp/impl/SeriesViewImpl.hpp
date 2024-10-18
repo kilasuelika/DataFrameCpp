@@ -66,6 +66,12 @@ namespace dfc {
         return os;
     }
 
+    template<typename T>
+    inline SeriesView& SeriesView::set(const T& v) {
+        *this = v;
+        return *this;
+    }
+
     template <typename T> void dfc::SeriesView::astype() { _values->astype<T>(); }
 
     inline dfc::Series dfc::SeriesView::copy() const { return Series(*this); }
@@ -98,6 +104,7 @@ namespace dfc {
         }
         return *this;
     }
+
 
 #include "AssignmentMacro.hpp"
 
@@ -132,7 +139,7 @@ namespace dfc {
             astype<Type>();                                                                        \
         }                                                                                          \
         for (int i = 0; i < _index->size(); ++i) {                                                 \
-            _values->iloc<Type>(i) = v;                                                            \
+            _values->iloc<Type>(_index->iloc_id(i)) = v;                                                            \
         }                                                                                          \
         break;                                                                                     \
     }

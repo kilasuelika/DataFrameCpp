@@ -39,7 +39,7 @@ namespace dfc {
         std::string dtype_name() const { return _dtype_name; }
 
         // Subscripts.
-        virtual size_t iloc_id(long long i) const { return _pos[i > 0 ? i : _size - i]; }
+        virtual size_t iloc_id(long long i) const { return _pos[i >= 0 ? i : _size - i]; }
         virtual std::vector<size_t> iloc_id(const std::vector<long long>& pos);
 
         virtual size_t iloc_id_(size_t i) const { return _pos[i]; } // Only for positive index.

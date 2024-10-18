@@ -2,7 +2,7 @@
 
 ## Goal and Limitation
 
-The goal of this library is to provide a dynamic DataFrame library for C++ with pandas-like API. Currently it mainly deal with data management.
+The goal of this library is to provide a dynamic DataFrame library for C++ with pandas-like API. Currently it mainly deal with data management. [hosseinmoein/DataFrame](https://github.com/hosseinmoein/DataFrame) is a good data library. But I feel upset when I use it due to it is mainly designed for static column types and lacking data manuplating methods, e.g. remove rows and cast column type. So I decide to write my own dataframe library. 
 
 "Dynamic" means data type information will be stored (I use `variant` to store data) and you don't need to specify data types when programming at most time. What's more, the column type can be changed on-the-fly. Of course, the trade-off is **Lower Performace** as type information must be matched at runtime. However the user can also use function of template version and provide a known data type to avoid runtime comparison.
 
@@ -113,8 +113,13 @@ dfc::DataFrame df{{"a", {1.0, 2.0, 9.0}},
 ```cpp
 dfc::DataFrame df({"a","b","c"},{DType::STRING,DType::DOUBLE, DType::INT});  //3 colums.
 
-df.append("f", dfc::DType::STRING); //blank column
-df.append("g", {"11", "12", "13"});
+// append column
+df.append_col("f", dfc::DType::STRING); //blank column
+df.append_col("g", {"11", "12", "13"});
+
+// append row
+df.append_row(); // blank row. return a DataFrameView of the last row.
+df.append_row().set("a", 5).set("b", 7);  // Append a row and set value. 
 ```
 
 ### Subscription
