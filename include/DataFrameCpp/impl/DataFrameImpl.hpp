@@ -368,6 +368,10 @@ namespace dfc {
         }
     }
 
+    template <supported_functor_type Func = std::function<double(double)>>
+    decltype(auto) apply_in_place(Func f) {
+        return apply<true, Func>(f);
+    };
     template <bool inplace, template <typename> typename TemplateFunc,
         supported_type_pack... TargetArgumentTypes>
     decltype(auto) DataFrame::apply() {

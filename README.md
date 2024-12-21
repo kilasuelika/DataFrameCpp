@@ -26,8 +26,10 @@ If you remove rows from the original dataframe, then you shouldn't use views cre
 
 ## Task
 
-- [ ] `apply`
-- [ ] Sort
+- [x] `apply`
+- [ ] `select()`
+- [ ] `groupby()`
+- [ ] `sort()`
 - [ ] Key-value Index
 - [ ] Statistical and math functions
 - [ ] Dump to binary and load
@@ -151,7 +153,8 @@ When you pass a concrete unary function, only columns have the same data type wi
 dfc::DataFrame df{{"a", {1.0, 2.0, 9.0, 8.0}}, {"b", {6, 7, 8, 9}}};
 
 std::function<double(double)> double_plus_1_functor = [](double x) { return x + 1; };
-df.apply<true>(double_plus_1_functor); // values of column a changed and b no change.
+df.apply<true>(double_plus_1_functor); // values of column a changed and b no change. `true` for inplace.
+df.apply_in_place(double_plus_1_functor);  // the same above.
 
 auto double_to_int_functor = [](double x) { return int(x); };
 df.apply<true>(double_to_int_functor); // Now a is a int column.
@@ -161,7 +164,7 @@ df.apply<true>([](int x) { return x + 2; }); // pass lambda directly.
 
 ##### Pass a template functor with unique return type
 
-Consider a `to_string()` that can accept multiple type inputs and a known unique return type. Here you must pass a template functor as a template argument. You can specify a list of target argument types.
+Consider a `to_string()` that can accept multiple type inputs and a known unique return type. Then you can pass a template functor as a template argument and specify a list of target argument types to convert specific type of columns to string.
 
 ```cpp
 template <typename T> struct to_string_functor {
@@ -205,7 +208,7 @@ Use `Index*` to point to a basis index. The `ViewIndex` **may not** be contigous
 
 This is usefull for sorting and subscripting. For example, we can use a view to record the order of sorting results without actually reorder all rows(which requires copying and moving data between rows).
 
-The `ViewIndex` can running on `Index* = nullptr`. Then it can only use pos to generate index.
+The `ViewIndex` can running on `Index* = nullptr`. Then it can only use `pos` to generate index.
 
 Note that `ViewIndex` is the index of view, not view of index.
 
